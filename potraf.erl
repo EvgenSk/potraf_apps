@@ -90,10 +90,10 @@ add_by_string(Connection, Q_string, Value) ->
     eredis:q(Connection, ["LPUSH", Q_string, Value]).
     
 get(ZIP, Param) ->
-    get(get_connection(result), ZIP, Param).
+    get(?RESULT, ZIP, Param).
 
 add(ZIP, Param, Value) ->
-    add(get_connection(raw_data), ZIP, Param, Value).
+    add(?RAW_DATA, ZIP, Param, Value).
 
 set_by_string(Connection, Q_string, Value) ->
     eredis:q(Connection, ["SET", Q_string, Value]).
@@ -103,14 +103,14 @@ set(Connection, ZIP, Param, Value) ->
     eredis:q(Connection, ["SET", Q_string, Value]).
 
 set(ZIP, Param, Value) ->
-    set(get_connection(result), ZIP, Param, Value).
+    set(?RESULT, ZIP, Param, Value).
 
 get_last_n(Connection, ZIP, Param, N) ->
     Q_string = get_q_string(ZIP, Param),
     eredis:q(Connection, ["LRANGE", Q_string, 0, N - 1]).
 
 get_last_n(ZIP, Param, N) ->
-    get_last_n(get_connection(raw_data), ZIP, Param, N).
+    get_last_n(?RAW_DATA, ZIP, Param, N).
 
 get_actual_count(Connection, {Time_int, Count}, ZIP, MAX) -> 
     {Mega, Seconds, _} = now(),				   % may be use micro?
@@ -127,7 +127,7 @@ get_actual_count(Connection, {Time_int, Count}, ZIP, MAX) ->
     length(Actual_times).
 
 get_actual_count({Time_int, Count}, ZIP, MAX) ->
-    get_actual_count(get_connection(raw_data), {Time_int, Count}, ZIP, MAX).
+    get_actual_count(?RAW_DATA, {Time_int, Count}, ZIP, MAX).
 
 max_useful() ->
     100.
@@ -158,5 +158,5 @@ get_average_for_time(Connection, {Time_int, Count}, ZIP, Param) ->
     end.
 	    
 get_average_for_time({Time_int, Count}, ZIP, Param) ->
-    get_average_for_time(get_connection(raw_data), {Time_int, Count}, ZIP, Param).
+    get_average_for_time(?RAW_DATA, {Time_int, Count}, ZIP, Param).
 

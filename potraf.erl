@@ -56,9 +56,9 @@ get_params_timestamp(Connection, ZIP, Param) ->
      get_by_string(Connection, Second)}.
 
 set_params_timestamp(Connection, ZIP, Param, {Mega, Second}) ->
-    {Mega, Second} = get_timestamp_q_strings(ZIP, Param),
-    set_by_string(Connection, Mega),
-    set_by_string(Connection, Second).
+    {Mega_str, Second_str} = get_timestamp_q_strings(ZIP, Param),
+    set_by_string(Connection, Mega_str, Mega),
+    set_by_string(Connection, Second_str, Second).
 
 get_connection(result) ->
     {ok, C} = eredis:start_link(),

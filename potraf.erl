@@ -1,7 +1,7 @@
 
 -module(potraf).
 
--export([get_people_count/1, 
+-export([get_people_count/1, 		       
 	 to_string/1, 
 	 get/2, 
 	 get/3,
@@ -13,6 +13,10 @@
 
 -include("../include/eredis.hrl").
 %-import(eredis, [start_link/0, q/2]).
+
+%% 
+%% Internal functions
+%% 
 
 to_string(Some) ->
     lists:flatten(io_lib:format("~p", [Some])).

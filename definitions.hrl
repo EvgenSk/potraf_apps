@@ -6,3 +6,21 @@
 
 %% Useless element
 -define(USELESS_ELEM, -1).
+
+%% info about traffic
+
+-record(traffic, 
+	{people_count,
+	 service_time,
+	 increment,
+	 post_windows_count,
+	 package_windows_count}).
+
+%% Timestamps for each parameter of the record
+
+-record(timestamps, 
+	{people_count,
+	 service_time,
+	 increment,
+	 post_windows_count,
+	 package_windows_count}).

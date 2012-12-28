@@ -40,15 +40,15 @@ get_q_string(ZIP, Param) ->
 	people_count -> lists:concat([to_string(ZIP), ":", "people-count"]);
 	service_time -> lists:concat([to_string(ZIP), ":", "service-time"]);
 	increment -> lists:concat([to_string(ZIP), ":", "increment"]);
-	post-windows-count -> lists:concat([to_string(ZIP), ":", "post-windows-count"]);
-	package-windows-count -> lists:concat([to_string(ZIP), ":", "package-windows-count"])
+	post_windows_count -> lists:concat([to_string(ZIP), ":", "post-windows-count"]);
+	package_windows_count -> lists:concat([to_string(ZIP), ":", "package-windows-count"])
     end.
 
 get_timestamp_q_strings(ZIP, Param) ->
     Timestamp_param = 
 	case Param of
-	    res-timestamp -> lists:concat([to_string(ZIP), ":", "res-timestamp"]);
-	    next-res-timestamp -> lists:concat([to_string(ZIP), ":", "next-res-timestamp"]);
+	    res_timestamp -> lists:concat([to_string(ZIP), ":", "res-timestamp"]);
+	    next_res_timestamp -> lists:concat([to_string(ZIP), ":", "next-res-timestamp"]);
 	    _ -> lists:concat(get_q_string(ZIP, Param), ":", "timestamp")
 	end,
     {lists:concat(Timestamp_param, ":", "mega"),

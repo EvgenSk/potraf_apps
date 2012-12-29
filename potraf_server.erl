@@ -11,11 +11,16 @@
 %% API (gen_server functions)
 %% 
 
-start_link(Args, Options) ->
-    gen_server:start_link(?MODULE, Args, Options).
+start_link(Time_interval, Update_now) ->
+    gen_server:start_link(?MODULE, [Time_interval, Update_now], []).
 
-init(_Args) ->
-    cast(self(), #potraf_req{type = update}),
-    send_interval(Time, #potraf_req{type = update}), % Time should be taken from args or from config, if there is not in args
-    {ok, #potraf_state{readiness = updating}}.
+init([Time_interval, Update_now]) ->
+    timer:send_interval(Time_interval, #potraf_req{type = update}),
+    case Update_now of
+	update -> 
+	    gen_server:cast(self(), #potraf_req{type = update}),
+	    {ok, #potraf_state{readiness = updating}};
+	_ -> 
+	    {ok, #potraf_state{readiness = ready}}
+    end.
 

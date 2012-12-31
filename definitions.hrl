@@ -8,6 +8,7 @@
 
 -define(POTRAF_SERV, potraf_serv).
 -define(HTTP_HANDLER, http_handler).
+-define(UPDATER, updater).
 
 %% Useless element
 

@@ -43,7 +43,7 @@ handle_cast(_Msg, State)
 
 %% handle_call
     
-handle_call(#data_req{request = update}, _From, #data_status{status = ready}) ->
+handle_call(#data_req{request = update}, _From, #data_status{status = up_to_date}) ->
     gen_server:cast(?UPDATER, #data_req{request = update}),
     {noreply, #data_status{status = updating}};
 
@@ -56,7 +56,7 @@ handle_call(#data_req{request = info, info_type = updating_status}, _From, State
 
 handle_call(#data_req{request = info, info_type = zip_status, param = ZIP}, _From, State) ->
     if
-	State == #data_status{status = updating} ; potraf:check_need_update(?RESULT, ZIP) -> 
+	State == #data_status{status = updating} ; potraf:check_need_update(potraf:get_connection(?RESULT), ZIP) -> 
 	    #data_status{status = updating};
 	_ -> #data_status{status = up_to_date}
     end.

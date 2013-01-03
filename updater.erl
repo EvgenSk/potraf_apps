@@ -52,11 +52,11 @@ handle_info(Info, State) ->
 update_data() ->
     Connection = potraf:get_connection(result),
     update_each_zip(Connection),
-    %% TODO: also need to update timestamps
+    potraf:swap_upd_zips(Connection),
     gen_server:cast(?INFORMER, #data_req{request = updating_finished}).
 
 update_each_zip(Connection) ->
-    ZIP = potraf:get_zip_for_upd(),
+    ZIP = potraf:get_zip_for_upd(Connection),
     case ZIP of
 	undefined -> ok;
 	_ -> 
@@ -66,7 +66,6 @@ update_each_zip(Connection) ->
 			   record_info(fields, traffic)),
 	    foreach(fun({Id, Val}) -> potraf:set(Connection, ZIP, Id, Val) end, 
 		    Avg_vals),
-	    %% TODO: also need to update timestamps
 	    update_each_zip(Connection)
     end.
     

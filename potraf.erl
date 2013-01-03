@@ -12,7 +12,6 @@
 	 bin_to_num/1]).
 
 -include("../include/eredis.hrl").
-%-import(eredis, [start_link/0, q/2]).
 
 %% 
 %% Internal functions
@@ -20,20 +19,6 @@
 
 to_string(Some) ->
     lists:flatten(io_lib:format("~p", [Some])).
-
-get_people_count(Post_office_index) ->
-    {ok, C} = eredis:start_link(),
-    eredis:q(C, ["GET" , lists:concat([to_string(Post_office_index), ":", "people-count"])]). % need to know what to use instead of C (connection)
-
-for_db(result, Fun) ->
-    {ok, C} = eredis:start_link(),
-    eredis:q(C, ["SELECT", 0]),
-    Fun(C);
-
-for_db(raw, Fun) ->
-    {ok, C} = eredis:start_link(),
-    eredis:q(C, ["SELECT", 1]),
-    Fun(C).
 
 get_q_string(ZIP, Param) ->
     case Param of
@@ -182,3 +167,27 @@ set_last_timestamp(Connection, ZIP, Param, Timestamp) ->
     {Mega_val, Seconds_val} = Timestamp,
     {set_by_string(Connection, add_actual_suff(Mega), Mega_val),
      set_by_string(Connection, add_actual_suff(Seconds), Seconds_val)}.
+
+get_zip_for_upd(Connection) ->
+    eredis:q(Connection, ["SPOP", get_update_key(main)]).
+
+get_update_key(main) ->
+    "need-update";
+
+get_update_key(tmp) ->
+    "need-update-tmp".
+
+mark_for_upd(Connection, Key, ZIP) ->
+    eredis:q(Connection, ["SADD", Key, ZIP]).
+
+swap_upd_zips(Connection) ->
+    eredis:q(Connection, ["SUNIONSTORE", get_update_key(main), get_update_key(tmp)]),
+    eredis:q(Connection, ["DEL", get_update_key(tmp)]).
+
+check_need_upd(Connection, ZIP) ->
+    {ok, Bin_res} = eredis:q(Connection, ["SISMEMBER", get_update_key(main), ZIP]),
+    case bin_to_num(Bin_res) of
+	1 -> ready;
+	0 -> updating
+    end.
+	    

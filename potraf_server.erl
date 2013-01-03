@@ -2,7 +2,7 @@
 -module(potraf_server).
 -behaviour(gen_server).
 
--export([start_link/2, start_link/3]).
+-export([start_link/0, start_link/1]).
 -export([init/1, handle_call/3, handle_cast/2]).
 
 -include("definitions.hrl").
@@ -11,31 +11,16 @@
 %% API (gen_server functions)
 %% 
 
-start_link(Time_interval, Update_now) ->
-    gen_server:start_link(?MODULE, [Time_interval, Update_now], []).
+start_link() ->
+    gen_server:start_link(?MODULE, [], []).
 
-start_link(ServerName, Time_interval, Update_now) ->
-    gen_server:start_link(ServerName, ?MODULE, [Time_interval, Update_now], []).
+start_link(ServerName) ->
+    gen_server:start_link(ServerName, ?MODULE, [], []).
 
-init([Time_interval, Update_now]) ->
-    timer:send_interval(Time_interval, #potraf_req{type = update}), % may be we must use apply_interval instead of send_interval
-    case Update_now of
-	update -> 
-	    gen_server:cast(?UPDATER, #potraf_req{type = update}),
-	    {ok, #potraf_state{readiness = updating}};
-	_ -> 
-	    {ok, #potraf_state{readiness = ready}}
-    end.
+init(_Args) ->
+    {ok, ready}.
 
 %% handle_call
-
-handle_call(#potraf_req{type = update}, _From, State) ->
-    case State of
-	#potraf_state{readiness = ready} ->
-	    gen_server:cast(?UPDATER, #potraf_req{type = update}),
-	    {noreply, #potraf_state{readiness = updating}};
-	 _ -> {noreply, State}
-    end;
 
 handle_call(#potraf_req{type = get, param = ZIP}, _From, State) ->
     wait_data_ready(ZIP),
@@ -49,25 +34,8 @@ handle_call(#potraf_req{type = add, param = {ZIP, Traf_info}}, _From, State) ->
 
 %% handle_cast
 
-handle_cast(#potraf_req{type = update}, State) 
-  when State = #potraf_state{readiness = ready}->
-    gen_server:cast(?UPDATER, #potraf_req{type = update}), % TODO: may be better would be to rise new process for updating every time
-    {noreply, #potraf_state{readiness = updating}};
-
-handle_cast(#potraf_req{type = update}, State) 
-  when State = #potraf_state{readiness = updating} ->
-    {noreply, State};
-
-handle_cast(#potraf_req{type = add, param = {ZIP, Traf_info}}, State) ->
-    add_traffic_info(ZIP, Traf_info),
-    {noreply, State};
-
-handle_cast(updated, _State) ->			% TODO: move 'updated' to some record?
-    {noreply, #potraf_state{readiness = ready}};
-
 handle_cast(_Msg, State) ->
     {noreply, State}.
-
 
 %% handle_info
 

@@ -48,7 +48,6 @@ get_timestamp_q_strings(ZIP, Param) ->
     Timestamp_param = 
 	case Param of
 	    res_timestamp -> lists:concat([to_string(ZIP), ":", "res-timestamp"]);
-	    next_res_timestamp -> lists:concat([to_string(ZIP), ":", "next-res-timestamp"]);
 	    _ -> lists:concat(get_q_string(ZIP, Param), ":", "timestamp")
 	end,
     {lists:concat(Timestamp_param, ":", "mega"),
@@ -63,6 +62,12 @@ set_params_timestamp(Connection, ZIP, Param, {Mega, Second}) ->
     {Mega_str, Second_str} = get_timestamp_q_strings(ZIP, Param),
     set_by_string(Connection, Mega_str, Mega),
     set_by_string(Connection, Second_str, Second).
+
+add_params_timestamp(Connection, ZIP, Param, Timestamp) ->
+    {Mega_str, Second_str} = get_timestamp_q_strings(ZIP, Param),
+    {Mega_val, Seconds_val, _} = Timestamp,
+    add_by_string(Connection, Mega_str, Mega_val),
+    add_by_string(Connection, Seconds_str, Seconds_val).
 
 get_connection(result) ->
     {ok, C} = eredis:start_link(),
@@ -110,16 +115,16 @@ set(ZIP, Param, Value) ->
     set(?RESULT, ZIP, Param, Value).
 
 get_last_n(Connection, ZIP, Param, N) ->
-    Q_string = get_q_string(ZIP, Param),
-    eredis:q(Connection, ["LRANGE", Q_string, 0, N - 1]).
+    {Mega, _} = get_timestamp_q_strings(ZIP, Param),
+    eredis:q(Connection, ["LRANGE", Mega, 0, N - 1]).
 
 get_last_n(ZIP, Param, N) ->
     get_last_n(?RAW_DATA, ZIP, Param, N).
 
-get_actual_count(Connection, {Time_int, Count}, ZIP, MAX) -> 
+get_actual_count(Connection, {Time_int, Count}, ZIP, Param, MAX) -> 
     {Mega, Seconds, _} = now(),				   % may be use micro?
     Cur_time = Mega * 1000000 + Seconds,
-    Times = get_last_n(Connection, ZIP, timestamp, MAX),
+    Times = get_last_n(Connection, ZIP, Param, MAX),
     Coeff = 
 	case Time_int of
 	    second -> 1;
@@ -130,7 +135,7 @@ get_actual_count(Connection, {Time_int, Count}, ZIP, MAX) ->
     Actual_times = lists:filter(fun(Time) -> Time > Min_time end, Times),
     length(Actual_times).
 
-get_actual_count({Time_int, Count}, ZIP, MAX) ->
+get_actual_count({Time_int, Count}, ZIP, Param, MAX) ->
     get_actual_count(?RAW_DATA, {Time_int, Count}, ZIP, MAX).
 
 max_useful() ->
@@ -164,3 +169,16 @@ get_average_for_time(Connection, {Time_int, Count}, ZIP, Param) ->
 get_average_for_time({Time_int, Count}, ZIP, Param) ->
     get_average_for_time(?RAW_DATA, {Time_int, Count}, ZIP, Param).
 
+add_actual_suff(Param) ->
+    lists:concat(Param, ":", "actual").
+
+get_last_timestamp(Connection, ZIP, Param) ->
+    {Mega, Seconds} = get_timestamp_q_strings(ZIP, Param),
+    {get_by_string(Connection, add_actual_suff(Mega)),
+     get_by_string(Connection, add_actual_suff(Seconds))}.
+
+set_last_timestamp(Connection, ZIP, Param, Timestamp) ->
+    {Mega_str, Seconds_str} = get_timestamp_q_strings(ZIP, Param),
+    {Mega_val, Seconds_val} = Timestamp,
+    {set_by_string(Connection, add_actual_suff(Mega), Mega_val),
+     set_by_string(Connection, add_actual_suff(Seconds), Seconds_val)}.

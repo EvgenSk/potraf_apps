@@ -9,10 +9,15 @@
 -define(POTRAF_SERV, potraf_serv).
 -define(HTTP_HANDLER, http_handler).
 -define(UPDATER, updater).
+-define(INFORMER, informer).
 
 %% Useless element
 
 -define(USELESS_ELEM, -1).
+
+%% useful macroses
+
+-define(record_to_tuplelist(Rec, Ref), lists:zip(record_info(fields, Rec),tl(tuple_to_list(Ref)))).
 
 %% info about traffic
 
@@ -35,7 +40,7 @@
 %% Potraf server request
 
 -record(potraf_req, {
-	  type :: get | add | update, 
+	  type :: get | add, 
 	  param :: any()
 	 }).
 
@@ -45,3 +50,14 @@
 	  readiness :: ready | updating
 	 }).
 
+%% Updater records
+
+-record(data_req, {
+	  request :: update | info,
+	  info_type :: updating_status | zip_status,
+	  param :: any()
+	 }).
+
+-record(data_status, {
+	 status :: up_to_date | updating
+	 }).

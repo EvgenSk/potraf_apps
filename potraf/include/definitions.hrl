@@ -40,7 +40,7 @@
 %% Potraf server request
 
 -record(potraf_req, {
-	  type :: get | add, 
+	  request :: get | add, 
 	  param :: any()
 	 }).
 

@@ -22,19 +22,19 @@ init(_Args) ->
 
 %% handle_call
 
-handle_call(#potraf_req{type = get, param = ZIP}, _From, State) ->
-    wait_data_ready(ZIP),
+handle_call(#potraf_req{request = get, param = ZIP}, _From, State) ->
+    wait_data_ready(ZIP),			% TODO: do it another way
     Traffic = get_traffic_info(ZIP),
     Timestamps = get_timestamps(ZIP),
     {reply, {Traffic, Timestamps}, State}; % TODO: may be we need record for reply {Traffic, Timestamps}
 
-handle_call(#potraf_req{type = add, param = {ZIP, Traf_info}}, _From, State) ->
+handle_call(#potraf_req{request = add, param = {ZIP, Traf_info}}, _From, State) ->
     add_traffic_and_timestamps_info(ZIP, Traf_info),
-    {noreply, State}.
+    {reply, ok, State}.
 
 %% handle_cast
 
-handle_cast(#potraf_req{type = add, param = {ZIP, Traf_info}}, State) ->
+handle_cast(#potraf_req{request = add, param = {ZIP, Traf_info}}, State) ->
     add_traffic_and_timestamps_info(ZIP, Traf_info),
     {noreply, State}.
 
@@ -121,8 +121,7 @@ get_data_status(ZIP) ->
     end.
 
 get_updating_status() ->
-    {reply, Reply} = gen_server:call(?INFORMER, #data_req{request = info, info_type = updating_status}),
-    Reply.
+    gen_server:call(?INFORMER, #data_req{request = info, info_type = updating_status}).
 
 check_need_update(ZIP) ->
     potraf_lib:check_need_upd(get_connection(?RESULT), ZIP).

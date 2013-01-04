@@ -1,5 +1,5 @@
 
--module(potraf).
+-module(potraf_lib).
 
 -export([get_people_count/1, 		       
 	 to_string/1, 
@@ -54,21 +54,11 @@ add_params_timestamp(Connection, ZIP, Param, Timestamp) ->
     add_by_string(Connection, Mega_str, Mega_val),
     add_by_string(Connection, Seconds_str, Seconds_val).
 
-get_connection(result) ->
+get_connection(Num) ->
     {ok, C} = eredis:start_link(),
-    eredis:q(C, ["SELECT", 0]),
+    eredis:q(C, ["SELECT", Num]),
     C;
 
-get_connection(raw_data) ->
-    {ok, C} = eredis:start_link(),
-    eredis:q(C, ["SELECT", 1]),
-    C;
-
-get_connection(calculated_data) ->
-    {ok, C} = eredis:start_link(),
-    eredis:q(C, ["SELECT", 2]),
-    C;
-    
 get(Connection, ZIP, Param) ->
     Q_string = get_q_string(ZIP, Param),
     eredis:q(Connection, ["GET", Q_string]).
@@ -83,12 +73,6 @@ add(Connection, ZIP, Param, Value)->
 add_by_string(Connection, Q_string, Value) ->
     eredis:q(Connection, ["LPUSH", Q_string, Value]).
     
-get(ZIP, Param) ->
-    get(?RESULT, ZIP, Param).
-
-add(ZIP, Param, Value) ->
-    add(?RAW_DATA, ZIP, Param, Value).
-
 set_by_string(Connection, Q_string, Value) ->
     eredis:q(Connection, ["SET", Q_string, Value]).
  
@@ -96,15 +80,9 @@ set(Connection, ZIP, Param, Value) ->
     Q_string = get_q_string(ZIP, Param),
     eredis:q(Connection, ["SET", Q_string, Value]).
 
-set(ZIP, Param, Value) ->
-    set(?RESULT, ZIP, Param, Value).
-
 get_last_n(Connection, ZIP, Param, N) ->
     {Mega, _} = get_timestamp_q_strings(ZIP, Param),
     eredis:q(Connection, ["LRANGE", Mega, 0, N - 1]).
-
-get_last_n(ZIP, Param, N) ->
-    get_last_n(?RAW_DATA, ZIP, Param, N).
 
 get_actual_count(Connection, {Time_int, Count}, ZIP, Param, MAX) -> 
     {Mega, Seconds, _} = now(),				   % may be use micro?
@@ -119,9 +97,6 @@ get_actual_count(Connection, {Time_int, Count}, ZIP, Param, MAX) ->
     Min_time = Cur_time - Coeff * Count,
     Actual_times = lists:filter(fun(Time) -> Time > Min_time end, Times),
     length(Actual_times).
-
-get_actual_count({Time_int, Count}, ZIP, Param, MAX) ->
-    get_actual_count(?RAW_DATA, {Time_int, Count}, ZIP, MAX).
 
 max_useful() ->
     100.
@@ -151,9 +126,6 @@ get_average_for_time(Connection, {Time_int, Count}, ZIP, Param) ->
 	_ -> sum(Useful_data) / Useful_length
     end.
 	    
-get_average_for_time({Time_int, Count}, ZIP, Param) ->
-    get_average_for_time(?RAW_DATA, {Time_int, Count}, ZIP, Param).
-
 add_actual_suff(Param) ->
     lists:concat(Param, ":", "actual").
 

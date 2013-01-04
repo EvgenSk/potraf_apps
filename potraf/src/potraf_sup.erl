@@ -18,9 +18,9 @@ start_link(SupName) ->
 
 init([]) ->
     {ok, 
-     {{one_for_one, 5, 60}, 		% TODO: use application config
+     {{one_for_one, 5, 60}, 		
       [{?INFORMER,
-	{?INFORMER, start_link, [5000, dont_update]}, % TODO: use app config too
+	{?INFORMER, start_link, [application:get_env(upd_time_interval), dont_update]},
 	permanent,
 	infinity,
 	worker,

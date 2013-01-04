@@ -50,21 +50,21 @@ handle_info(Info, State) ->
 %% 
 
 update_data() ->
-    Connection = potraf:get_connection(result),
+    Connection = potraf_client:get_connection(result),
     update_each_zip(Connection),
-    potraf:swap_upd_zips(Connection),
+    potraf_lib:swap_upd_zips(Connection),
     gen_server:cast(?INFORMER, #data_req{request = updating_finished}).
 
 update_each_zip(Connection) ->
-    ZIP = potraf:get_zip_for_upd(Connection),
+    ZIP = potraf_lib:get_zip_for_upd(Connection),
     case ZIP of
 	undefined -> ok;
 	_ -> 
 	    Avg_vals = map(fun(Param) -> 
 				   {Param, 
-				    potraf:get_average_for_time(Connection, {minute, 5}, ZIP, Param)} end, % {minute, 5} must be somethiing else for increment
+				    potraf_lib:get_average_for_time(Connection, {minute, 5}, ZIP, Param)} end, % {minute, 5} must be somethiing else for increment
 			   record_info(fields, traffic)),
-	    foreach(fun({Id, Val}) -> potraf:set(Connection, ZIP, Id, Val) end, 
+	    foreach(fun({Id, Val}) -> potraf_lib:set(Connection, ZIP, Id, Val) end, 
 		    Avg_vals),
 	    update_each_zip(Connection)
     end.

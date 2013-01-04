@@ -56,7 +56,7 @@ handle_call(#data_req{request = info, info_type = updating_status}, _From, State
 
 handle_call(#data_req{request = info, info_type = zip_status, param = ZIP}, _From, State) ->
     if
-	State == #data_status{status = updating} ; potraf:check_need_update(potraf:get_connection(?RESULT), ZIP) -> 
+	State == #data_status{status = updating} ; potraf_lib:check_need_update(potraf_client:get_connection(?RESULT), ZIP) -> 
 	    #data_status{status = updating};
 	_ -> #data_status{status = up_to_date}
     end.

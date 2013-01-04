@@ -1,5 +1,5 @@
 
--module(potraf_server).
+-module(potraf_client).
 -behaviour(gen_server).
 
 -export([start_link/0, start_link/1]).

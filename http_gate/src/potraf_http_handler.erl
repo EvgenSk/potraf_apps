@@ -12,15 +12,15 @@
 %% API
 %% 
 
-init(_Transport, Req, []) ->
-    {ok, Req, undefined}.
+init(_Transport, Req, [Repl_type]) ->
+    {ok, Req, Repl_type}.
 
-handle(Req, State) ->
+handle(Req, Repl_type) ->
     {Method, Req2} = cowboy_req:method(Req),
     Potraf_req = get_potraf_req(Method, Req2),
     Potraf_repl = send_potraf_req(Potraf_req),
-    Repl = wrap_potraf_repl(Potraf_repl),
-    {ok, Repl, State}.
+    {ok, Req3} = send_response(Repl_type, Potraf_repl, Req2),
+    {ok, Req3, State}.
 
 terminate(_Req, _State) ->
     ok.
@@ -65,4 +65,33 @@ send_potraf_req(Req)
     {ok, Client} = potraf:start_link(),
     %% may ne add Client to potraf_sup
     gen_server:cast(Client, Req),
-    ok.
+    ok;
+
+send_potraf_req(_Req) ->
+    undefined.
+
+send_response(undefined, Req) ->
+    cowboy_req:reply(400, [], <<"Missing request parameters.">>);
+
+send_response(ok, Req) ->
+    cowboy_req:reply(200, [{<<"content-encoding">>, <<"utf-8">>}], "ok", Req);
+
+send_response(Reply_type, Reply, Req) ->
+    Wrapped_repl = wrap_potraf_repl(Reply_type, Reply),
+    cowboy_req:reply(200, 
+		     [{<<"content-encoding">>, <<"utf-8">>}], 
+		     Wrapped_repl, 
+		     Req).
+
+wrap_potraf_repl(simple, {Traf, Time}) ->
+    string:join([to_KeyVal_list_string(Traf), 
+		 to_KeyVal_list_string(Traf)], 
+		"|").
+
+to_KeyVal_list_string(Rec) ->
+    KeyVal_pairs = 
+	map(fun({Id, Val}) -> 
+		    string:join([atom_to_list(Id), float_to_list(Val)], ":") 
+	    end,
+	    record_to_tuplelist(traffic, Rec)),
+    string:join(KeyVal_pairs, ";").

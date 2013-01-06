@@ -6,7 +6,7 @@
 -export([handle/2]).
 -export([terminate/2]).
 
--include_lib("../../potraf/include/definitions.hrl").
+-include_lib("definitions.hrl").
 
 -import(lists, [map/2]).
 

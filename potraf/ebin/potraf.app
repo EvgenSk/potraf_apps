@@ -3,7 +3,7 @@
   {vsn, "1.0.0"},
   {modules, [potraf, potraf_sup, potraf_client, potraf_lib, informer, updater]},
   {registered, [potraf]},
-  {env, [{upd_time_interval, 5000}]},
+  {env, [{upd_time_interval, 300000}]},
   {applications, [
 		  kernel,
 		  stdlib,

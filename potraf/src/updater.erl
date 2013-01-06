@@ -19,12 +19,12 @@ start_link(Update_now) ->
 start_link(ServerName, Update_now) ->
     gen_server:start_link(ServerName, ?MODULE, [Update_now], []).
 
-init([Update_now]) ->
-    if Update_now == update -> 
-	    update_data()
-    end,
-    {ok, #data_status{status = up_to_date}}.
+init([update]) ->
+    update_data(),
+    {ok, #data_status{status = up_to_date}};
 
+init(_Args) ->
+    {ok, #data_status{status = up_to_date}}.
 
 %% handle_call
 

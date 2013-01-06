@@ -1,6 +1,6 @@
 
 -module(potraf_http_gate_sup).
--behaviour(application).
+-behaviour(supervisor).
 
 %% API.
 -export([start_link/0]).

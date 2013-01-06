@@ -2,6 +2,11 @@
 
 -module(calcs).
 
+-export([default_time_interval/0]).
+-export([increment_time_interval/0]).
+-export([calc/3]).
+-export([calc/2]).
+
 default_time_interval() ->
     {minute, 5}.
 

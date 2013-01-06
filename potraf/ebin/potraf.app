@@ -8,6 +8,6 @@
 		  kernel,
 		  stdlib,
 		  eredis
-		 ]}
+		 ]},
   {mod, {potraf, []}}
  ]}.

@@ -3,7 +3,7 @@
 -behaviour(gen_server).
 
 -export([start_link/1, start_link/2]).
--export([init/1, handle_call/3, handle_cast/2]).
+-export([init/1, handle_call/3, handle_cast/2, handle_info/2, code_change/3, terminate/2]).
 
 -import(lists, [map/2, foreach/2]).
 
@@ -46,6 +46,18 @@ handle_cast(_Req, State) ->
 handle_info(Info, State) ->
     gen_server:cast(self(), Info),
     {noreply, State}.
+
+
+%% code_change
+
+code_change(_OldVsn, State, _Extra) ->
+    {ok, State}.
+
+%% terminate
+
+terminate(normal, _State) ->
+    ok.
+
 
 %% 
 %% Internal functions

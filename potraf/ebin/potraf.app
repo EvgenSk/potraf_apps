@@ -1,9 +1,13 @@
 {application, potraf,
  [{description, "POst Office TRAFfic application"},
   {vsn, "1.0.0"},
-  {modules, [potraf_sup, potraf_client, potraf_lib, informer, updater]},
+  {modules, [potraf, potraf_sup, potraf_client, potraf_lib, informer, updater]},
   {registered, [potraf]},
   {env, [{upd_time_interval, 5000}]},
-  {applications, [eredis]}
+  {applications, [
+		  kernel,
+		  stdlib,
+		  eredis
+		 ]}
   {mod, {potraf, []}}
  ]}.

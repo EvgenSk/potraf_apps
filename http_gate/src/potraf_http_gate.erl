@@ -9,9 +9,9 @@
 %% API
 
 start(_Type, _Opts) ->
-    Repl_type = application:get_env(repl_type),
-    NbAcceptors = application:get_env(nbAcceptors),
-    Port = application:get_env(port),
+    {ok, Repl_type} = application:get_env(repl_type),
+    {ok, NbAcceptors} = application:get_env(nbAcceptors),
+    {ok, Port} = application:get_env(port),
     Dispatch = [
 		{'_', [
 		      {[], potraf_http_handler, [Repl_type]}

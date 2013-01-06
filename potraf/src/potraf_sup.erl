@@ -30,4 +30,5 @@ init([]) ->
 	permanent,
 	infinity,
 	worker,
-	[?UPDATER]}]}}.
+	[?UPDATER]}]
+     }}.

@@ -3,9 +3,11 @@
 -behaviour(gen_server).
 
 -export([start_link/0, start_link/1]).
--export([init/1, handle_call/3, handle_cast/2]).
+-export([init/1, handle_call/3, handle_cast/2, handle_info/2, code_change/3, terminate/2]).
 
 -include("definitions.hrl").
+
+-import(lists, [foreach/2, filter/2]).
 
 %% 
 %% API (gen_server functions)
@@ -36,7 +38,7 @@ handle_call(#potraf_req{request = add, param = {ZIP, Traf_info}}, _From, State) 
 
 handle_cast(#potraf_req{request = add, param = {ZIP, Traf_info}}, State) ->
     add_traffic_and_timestamps_info(ZIP, Traf_info),
-    {noreply, State}.
+    {noreply, State};
 
 handle_cast(_Msg, State) ->
     {noreply, State}.
@@ -46,13 +48,22 @@ handle_cast(_Msg, State) ->
 handle_info(_Message, State) ->
     {noreply, State}.
 
+%% code_change
+
+code_change(_OldVsn, State, _Extra) ->
+    {ok, State}.
+
+%% terminate
+
+terminate(normal, _State) ->
+    ok.
 
 %% 
 %% Internal functions
 %% 
 
 get_connection(result) ->
-    potraf_lib:get_connection(0).
+    potraf_lib:get_connection(0);
 
 get_connection(raw_data) ->
     potraf_lib:get_connection(1).
@@ -82,7 +93,7 @@ add_traffic_info(ZIP, Traf_info) ->
 
 add_traffic_info(Connection, ZIP, Traf_info) ->
     foreach(fun({Id, Val}) -> potraf_lib:add(Connection, ZIP, Id, Val) end,
-	    record_to_tuplelist(traffic, Traf_info)).
+	    ?record_to_tuplelist(traffic, Traf_info)).
 
 add_timestamps_info(ZIP, Timestamp) ->
     add_timestamps_info(get_connection(?RAW_DATA), ZIP, Timestamp).
@@ -96,9 +107,9 @@ set_last_timestamps(ZIP, Traf_info, Timestamp) ->
     set_last_timestamps(get_connection(?RESULT), ZIP, Traf_info, Timestamp).
 
 set_last_timestamps(Connection, ZIP, Traf_info, Timestamp) ->
-    foreach(fun({Id, Val}) -> potraf_lib:set_last_timestamps(Connection, ZIP, Id, Timestamp) end,
+    foreach(fun({Id, _Val}) -> potraf_lib:set_last_timestamps(Connection, ZIP, Id, Timestamp) end,
 	    filter(fun({_, Val})-> potraf_lib:is_useful(Val) end, 
-		   record_to_tuplelist(traffic, Traf_info))).
+		   ?record_to_tuplelist(traffic, Traf_info))).
 
 mark_for_upd(ZIP) ->
     Updating_key = 
@@ -106,10 +117,11 @@ mark_for_upd(ZIP) ->
 	    ready -> main;
 	    _ -> tmp
 	end,
-    potraf_lib:mark_for_upd(?RESULT, Updating_key, ZIP).
+    potraf_lib:mark_for_upd(get_connection(?RESULT), Updating_key, ZIP).
 
 add_traffic_and_timestamps_info(ZIP, Traf_info) ->
-    Timestamp = now(),
+    Timestamp = now(),				% TODO: need to get timestamp correctly
+    mark_for_upd(ZIP),
     add_traffic_info(ZIP, Traf_info),
     add_timestamps_info(ZIP, Timestamp),
     set_last_timestamps(ZIP, Traf_info, Timestamp).

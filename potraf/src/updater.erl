@@ -2,8 +2,10 @@
 -module(updater).
 -behaviour(gen_server).
 
--export([start_link/2, start_link/3]).
+-export([start_link/1, start_link/2]).
 -export([init/1, handle_call/3, handle_cast/2]).
+
+-import(lists, [map/2, foreach/2]).
 
 -include("definitions.hrl").
 

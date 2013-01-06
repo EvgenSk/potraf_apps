@@ -1,17 +1,33 @@
-
 -module(potraf_lib).
 
--export([get_people_count/1, 		       
-	 to_string/1, 
-	 get/2, 
-	 get/3,
-	 add/3,
-	 add/4,
-	 get_last_n/3,
-	 get_last_n/4, 
-	 bin_to_num/1]).
+-export([to_string/1]).
+-export([get/3]).
+-export([add/4]).
+-export([get_last_n/4]).
+-export([bin_to_num/1]).
+-export([get_params_timestamp/3]).
+-export([set_params_timestamp/4]).
+-export([add_params_timestamp/4]).
+-export([get_connection/1]).
+-export([get_by_string/2]).
+-export([add_by_string/3]).
+-export([set_by_string/3]).
+-export([set/4]).
+-export([get_actual_count/5]).
+-export([get_average_for_time/4]).
+-export([add_actual_suff/1]).
+-export([get_last_timestamp/3]).
+-export([set_last_timestamp/4]).
+-export([get_zip_for_upd/1]).
+-export([get_update_key/1]).
+-export([mark_for_upd/3]).
+-export([swap_upd_zips/1]).
+-export([check_need_upd/2]).
+-export([is_useful/1]).
 
--include("../include/eredis.hrl").
+%%-include("../include/eredis.hrl").
+
+-import(lists, [map/2, sum/1]).
 
 %% 
 %% Internal functions
@@ -50,14 +66,14 @@ set_params_timestamp(Connection, ZIP, Param, {Mega, Second}) ->
 
 add_params_timestamp(Connection, ZIP, Param, Timestamp) ->
     {Mega_str, Second_str} = get_timestamp_q_strings(ZIP, Param),
-    {Mega_val, Seconds_val, _} = Timestamp,
+    {Mega_val, Second_val, _} = Timestamp,
     add_by_string(Connection, Mega_str, Mega_val),
-    add_by_string(Connection, Seconds_str, Seconds_val).
+    add_by_string(Connection, Second_str, Second_val).
 
 get_connection(Num) ->
     {ok, C} = eredis:start_link(),
     eredis:q(C, ["SELECT", Num]),
-    C;
+    C.
 
 get(Connection, ZIP, Param) ->
     Q_string = get_q_string(ZIP, Param),
@@ -115,7 +131,7 @@ bin_to_num(Bin) ->
     end.
 
 get_average_for_time(Connection, {Time_int, Count}, ZIP, Param) ->
-    N = get_actual_count(Connection, {Time_int, Count}, ZIP, max_useful()),
+    N = get_actual_count(Connection, {Time_int, Count}, ZIP, Param, max_useful()),
     Data = map(fun(Elem) -> bin_to_num(Elem) end, 
 	       get_last_n(Connection, ZIP, Param, N)),
     Useful_data = lists:filter(fun(Elem) -> Elem /= unuseful_elem() end, 
@@ -137,8 +153,8 @@ get_last_timestamp(Connection, ZIP, Param) ->
 set_last_timestamp(Connection, ZIP, Param, Timestamp) ->
     {Mega_str, Seconds_str} = get_timestamp_q_strings(ZIP, Param),
     {Mega_val, Seconds_val} = Timestamp,
-    {set_by_string(Connection, add_actual_suff(Mega), Mega_val),
-     set_by_string(Connection, add_actual_suff(Seconds), Seconds_val)}.
+    {set_by_string(Connection, add_actual_suff(Mega_str), Mega_val),
+     set_by_string(Connection, add_actual_suff(Seconds_str), Seconds_val)}.
 
 get_zip_for_upd(Connection) ->
     eredis:q(Connection, ["SPOP", get_update_key(main)]).

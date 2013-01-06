@@ -35,10 +35,9 @@ handle_cast(#data_req{request = update}, #data_status{status = up_to_date}) ->
     {noreply, #data_status{status = updating}};
 
 handle_cast(#data_req{request = updating_finished}, _State) ->
-    {noreply, #data_status{status = up_to_date}}.
+    {noreply, #data_status{status = up_to_date}};
 
-handle_cast(_Msg, State)
-  when State = #data_status{status = updating} ->
+handle_cast(_Msg, State = #data_status{status = updating}) ->
     {noreply, State}.
 
 %% handle_call
@@ -47,17 +46,16 @@ handle_call(#data_req{request = update}, _From, #data_status{status = up_to_date
     gen_server:cast(?UPDATER, #data_req{request = update}),
     {noreply, #data_status{status = updating}};
 
-handle_call(#data_req{request = update}, _From, State) 
-  when State = #data_status{status = updating} ->
+handle_call(#data_req{request = update}, _From, State = #data_status{status = updating}) ->
     {noreply, State};
 
 handle_call(#data_req{request = info, info_type = updating_status}, _From, State) ->
     {reply, State, State};
 
 handle_call(#data_req{request = info, info_type = zip_status, param = ZIP}, _From, State) ->
-    if
-	State == #data_status{status = updating} ; potraf_lib:check_need_update(potraf_client:get_connection(?RESULT), ZIP) -> 
-	    #data_status{status = updating};
+    case {State#data_status.status, potraf_lib:check_need_update(potraf_client:get_connection(?RESULT), ZIP)} 
+    of 
+	{updating, updating} -> #data_status{status = updating};
 	_ -> #data_status{status = up_to_date}
     end.
 
@@ -67,6 +65,5 @@ handle_info(#data_req{request = update}, #data_status{status = up_to_date}) ->
     gen_server:cast(?UPDATER, #data_req{request = update}),
     {noreply, #data_status{status = updating}};
 
-handle_info(_Msg, State)
-  when State = #data_status{status = updating} ->
+handle_info(_Msg, State = #data_status{status = updating}) ->
     {noreply, State}.

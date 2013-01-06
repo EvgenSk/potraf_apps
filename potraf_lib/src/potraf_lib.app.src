@@ -1,8 +1,0 @@
-{application, potraf_lib,
- [{description, "Lib for POst Office TRAFfic application"},
-  {vsn, "1.0.0"},
-  {modules, [potraf_lib]},
-  {registered, [potraf_lib]},
-  {applications, [eredis]},
-  {mod, {potraf_lib, []}}
- ]}.

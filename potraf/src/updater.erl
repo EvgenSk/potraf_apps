@@ -14,7 +14,7 @@
 %% 
 
 start_link(Update_now) ->
-    gen_server:start_link(?MODULE, [Update_now], []).
+    gen_server:start_link({local, ?MODULE}, ?MODULE, [Update_now], []).
 
 start_link(ServerName, Update_now) ->
     gen_server:start_link(ServerName, ?MODULE, [Update_now], []).
@@ -70,16 +70,18 @@ update_data() ->
     gen_server:cast(?INFORMER, #data_req{request = updating_finished}).
 
 update_each_zip(Connection) ->
-    ZIP = potraf_lib:get_zip_for_upd(Connection),
-    case ZIP of
+    ZIP_bin = potraf_lib:get_zip_for_upd(Connection),
+    case ZIP_bin of
 	undefined -> ok;
 	_ -> 
+	    ZIP = list_to_integer(binary:bin_to_list(ZIP_bin)),
 	    Avg_vals = map(fun(Param) -> 
 				   {Param, 
 				    potraf_lib:get_average_for_time(Connection, {minute, 5}, ZIP, Param)} end, % {minute, 5} must be somethiing else for increment
 			   record_info(fields, traffic)),
 	    foreach(fun({Id, Val}) -> potraf_lib:set(Connection, ZIP, Id, Val) end, 
 		    Avg_vals),
+	    potraf_lib:set_result_timestamp(Connection, ZIP, now()),
 	    update_each_zip(Connection)
     end.
     

@@ -12,7 +12,7 @@
 %% 
 
 start_link(Time_interval, Update_now) ->
-    gen_server:start_link(?MODULE, [Time_interval, Update_now], []).
+    gen_server:start_link({local, ?MODULE}, ?MODULE, [Time_interval, Update_now], []).
 
 start_link(ServerName, Time_interval, Update_now) ->
     gen_server:start_link(ServerName, ?MODULE, [Time_interval, Update_now], []).

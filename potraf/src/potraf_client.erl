@@ -72,21 +72,21 @@ get_traffic_info(ZIP) ->
     get_traffic_info(get_connection(?RESULT), ZIP).
 
 get_traffic_info(Connection, ZIP) ->
-    #traffic{people_count = potraf_lib:get(Connection, ZIP, people_count),
-	     service_time = potraf_lib:get(Connection, ZIP, service_time),
-	     increment = potraf_lib:get(Connection, ZIP, increment),
-	     post_windows_count = potraf_lib:get(Connection, ZIP, post_windows_count),
-	     package_windows_count = potraf_lib:get(Connection, ZIP, package_windows_count)}.
+    #traffic{people_count = potraf_lib:to_list(potraf_lib:get(Connection, ZIP, people_count)),
+	     service_time = potraf_lib:to_list(potraf_lib:get(Connection, ZIP, service_time)),
+	     increment = potraf_lib:to_list(potraf_lib:get(Connection, ZIP, increment)),
+	     post_windows_count = potraf_lib:to_list(potraf_lib:get(Connection, ZIP, post_windows_count)),
+	     package_windows_count = potraf_lib:to_list(potraf_lib:get(Connection, ZIP, package_windows_count))}.
 
 get_timestamps(ZIP) ->
     get_timestamps(get_connection(?RAW_DATA), ZIP).
 
 get_timestamps(Connection, ZIP) ->
-    #timestamps{people_count = potraf_lib:get_params_timestamp(Connection, ZIP, people_count),
-		service_time = potraf_lib:get_params_timestamp(Connection, ZIP, service_time),
-		increment = potraf_lib:get_params_timestamp(Connection, ZIP, increment),
-		post_windows_count = potraf_lib:get_params_timestamp(Connection, ZIP, post_windows_count),
-		package_windows_count = potraf_lib:get_params_timestamp(Connection, ZIP, package_windows_count)}.
+    #timestamps{people_count = potraf_lib:to_list(potraf_lib:get_params_timestamp(Connection, ZIP, people_count)),
+		service_time = potraf_lib:to_list(potraf_lib:get_params_timestamp(Connection, ZIP, service_time)),
+		increment = potraf_lib:to_list(potraf_lib:get_params_timestamp(Connection, ZIP, increment)),
+		post_windows_count = potraf_lib:to_list(potraf_lib:get_params_timestamp(Connection, ZIP, post_windows_count)),
+		package_windows_count = potraf_lib:to_list(potraf_lib:get_params_timestamp(Connection, ZIP, package_windows_count))}.
 
 add_traffic_info(ZIP, Traf_info) ->
     add_traffic_info(get_connection(?RAW_DATA), ZIP, Traf_info).
@@ -107,7 +107,7 @@ set_last_timestamps(ZIP, Traf_info, Timestamp) ->
     set_last_timestamps(get_connection(?RESULT), ZIP, Traf_info, Timestamp).
 
 set_last_timestamps(Connection, ZIP, Traf_info, Timestamp) ->
-    foreach(fun({Id, _Val}) -> potraf_lib:set_last_timestamps(Connection, ZIP, Id, Timestamp) end,
+    foreach(fun({Id, _Val}) -> potraf_lib:set_last_timestamp(Connection, ZIP, Id, Timestamp) end,
 	    filter(fun({_, Val})-> potraf_lib:is_useful(Val) end, 
 		   ?record_to_tuplelist(traffic, Traf_info))).
 

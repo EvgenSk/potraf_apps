@@ -24,6 +24,10 @@
 -export([swap_upd_zips/1]).
 -export([check_need_upd/2]).
 -export([is_useful/1]).
+-export([timestamp_to_list/1]).
+-export([to_int_or_atom/1]).
+-export([to_list/1]).
+-export([set_result_timestamp/3]).
 
 %%-include("../include/eredis.hrl").
 
@@ -49,15 +53,15 @@ get_timestamp_q_strings(ZIP, Param) ->
     Timestamp_param = 
 	case Param of
 	    res_timestamp -> lists:concat([to_string(ZIP), ":", "res-timestamp"]);
-	    _ -> lists:concat(get_q_string(ZIP, Param), ":", "timestamp")
+	    _ -> lists:concat([get_q_string(ZIP, Param), ":", "timestamp"])
 	end,
-    {lists:concat(Timestamp_param, ":", "mega"),
-     lists:concat(Timestamp_param, ":", "second")}.
+    {lists:concat([Timestamp_param, ":", "mega"]),
+     lists:concat([Timestamp_param, ":", "second"])}.
 
 get_params_timestamp(Connection, ZIP, Param) ->
     {Mega, Second} = get_timestamp_q_strings(ZIP, Param),
-    {get_by_string(Connection, Mega),
-     get_by_string(Connection, Second)}.
+    timestamp_to_list({to_int_or_atom(get_by_string(Connection, Mega)),
+		       to_int_or_atom(get_by_string(Connection, Second))}).
 
 set_params_timestamp(Connection, ZIP, Param, {Mega, Second}) ->
     {Mega_str, Second_str} = get_timestamp_q_strings(ZIP, Param),
@@ -70,6 +74,13 @@ add_params_timestamp(Connection, ZIP, Param, Timestamp) ->
     add_by_string(Connection, Mega_str, Mega_val),
     add_by_string(Connection, Second_str, Second_val).
 
+set_result_timestamp(Connection, ZIP, Timestamp) ->
+    {Mega, Second, _} = Timestamp,
+    {Mega_str, Second_str} = get_timestamp_q_strings(ZIP, res_timestamp),
+    set_by_string(Connection, Mega_str, Mega),
+    set_by_string(Connection, Second_str, Second).
+    
+
 get_connection(Num) ->
     {ok, C} = eredis:start_link(),
     eredis:q(C, ["SELECT", Num]),
@@ -77,28 +88,39 @@ get_connection(Num) ->
 
 get(Connection, ZIP, Param) ->
     Q_string = get_q_string(ZIP, Param),
-    eredis:q(Connection, ["GET", Q_string]).
+    {ok, Val} = eredis:q(Connection, ["GET", Q_string]),
+    Val.
 
 get_by_string(Connection, Q_string) ->
-    eredis:q(Connection, ["GET", Q_string]).
+    {ok, Val} = eredis:q(Connection, ["GET", Q_string]),
+    Val.
+
 
 add(Connection, ZIP, Param, Value)->
     Q_string = get_q_string(ZIP, Param),
-    eredis:q(Connection, ["LPUSH", Q_string, Value]).
+    {ok, Val} = eredis:q(Connection, ["LPUSH", Q_string, Value]),
+    Val.
 
 add_by_string(Connection, Q_string, Value) ->
-    eredis:q(Connection, ["LPUSH", Q_string, Value]).
+    {ok, Val} = eredis:q(Connection, ["LPUSH", Q_string, Value]),
+    Val.
     
 set_by_string(Connection, Q_string, Value) ->
-    eredis:q(Connection, ["SET", Q_string, Value]).
+    {ok, Val} = eredis:q(Connection, ["SET", Q_string, Value]),
+    Val.
  
 set(Connection, ZIP, Param, Value) ->
     Q_string = get_q_string(ZIP, Param),
-    eredis:q(Connection, ["SET", Q_string, Value]).
+    {ok, Val} = eredis:q(Connection, ["SET", Q_string, Value]),
+    Val.
 
 get_last_n(Connection, ZIP, Param, N) ->
     {Mega, _} = get_timestamp_q_strings(ZIP, Param),
-    eredis:q(Connection, ["LRANGE", Mega, 0, N - 1]).
+    {ok, Val} = eredis:q(Connection, ["LRANGE", Mega, 0, N - 1]),
+    case Val of
+	undefined -> undefined;
+	_ -> bin_to_num(Val)
+    end.
 
 get_actual_count(Connection, {Time_int, Count}, ZIP, Param, MAX) -> 
     {Mega, Seconds, _} = now(),				   % may be use micro?
@@ -117,18 +139,14 @@ get_actual_count(Connection, {Time_int, Count}, ZIP, Param, MAX) ->
 max_useful() ->
     100.
 
+is_useful(undefined) ->
+    false;
+
 is_useful(Data) ->
     Data /= unuseful_elem().
 
 unuseful_elem() ->
     -1.
-
-bin_to_num(Bin) ->
-    N = binary_to_list(Bin),
-    case string:to_float(N) of
-        {error,no_float} -> list_to_integer(N);
-        {F,_Rest} -> F
-    end.
 
 get_average_for_time(Connection, {Time_int, Count}, ZIP, Param) ->
     N = get_actual_count(Connection, {Time_int, Count}, ZIP, Param, max_useful()),
@@ -143,21 +161,22 @@ get_average_for_time(Connection, {Time_int, Count}, ZIP, Param) ->
     end.
 	    
 add_actual_suff(Param) ->
-    lists:concat(Param, ":", "actual").
+    lists:concat([Param, ":", "actual"]).
 
 get_last_timestamp(Connection, ZIP, Param) ->
     {Mega, Seconds} = get_timestamp_q_strings(ZIP, Param),
-    {get_by_string(Connection, add_actual_suff(Mega)),
+    {(get_by_string(Connection, add_actual_suff(Mega))),
      get_by_string(Connection, add_actual_suff(Seconds))}.
 
 set_last_timestamp(Connection, ZIP, Param, Timestamp) ->
     {Mega_str, Seconds_str} = get_timestamp_q_strings(ZIP, Param),
-    {Mega_val, Seconds_val} = Timestamp,
+    {Mega_val, Seconds_val, _} = Timestamp,
     {set_by_string(Connection, add_actual_suff(Mega_str), Mega_val),
      set_by_string(Connection, add_actual_suff(Seconds_str), Seconds_val)}.
 
 get_zip_for_upd(Connection) ->
-    eredis:q(Connection, ["SPOP", get_update_key(main)]).
+    {ok, Val} = eredis:q(Connection, ["SPOP", get_update_key(main)]),
+    Val.
 
 get_update_key(main) ->
     "need-update";
@@ -170,7 +189,8 @@ mark_for_upd(Connection, Key, ZIP) ->
 
 swap_upd_zips(Connection) ->
     eredis:q(Connection, ["SUNIONSTORE", get_update_key(main), get_update_key(tmp)]),
-    eredis:q(Connection, ["DEL", get_update_key(tmp)]).
+    eredis:q(Connection, ["DEL", get_update_key(tmp)]),
+    ok.
 
 check_need_upd(Connection, ZIP) ->
     {ok, Bin_res} = eredis:q(Connection, ["SISMEMBER", get_update_key(main), ZIP]),
@@ -179,3 +199,31 @@ check_need_upd(Connection, ZIP) ->
 	0 -> updating
     end.
 	    
+bin_to_num(Bin) ->
+    N = binary_to_list(Bin),
+    case string:to_float(N) of
+        {error,no_float} -> list_to_integer(N);
+        {F,_Rest} -> F
+    end.
+
+to_list(X) when is_binary(X) -> binary_to_list(X);
+to_list(X) when is_atom(X) -> atom_to_list(X);
+to_list(X) when is_integer(X) -> integer_to_list(X).
+
+to_int_or_atom(X) when is_atom(X) -> X;
+to_int_or_atom(X) when is_integer(X) -> X;
+to_int_or_atom(X) when is_binary(X) -> to_int_or_atom(binary_to_list(X));
+to_int_or_atom(X) when is_list(X) -> list_to_int_or_atom(X). 
+
+list_to_int_or_atom(X)->
+    case catch list_to_integer(X) of
+	{'EXIT', {badarg, _}} -> list_to_atom(X);
+	N -> N
+    end.
+
+timestamp_to_list(Timestamp) ->
+    case Timestamp of
+	{undefined, _} -> undefined;
+	{_, undefined} -> indefined;
+	{Mega, Second} -> lists:concat([to_list(Mega), to_list(Second)])
+    end.

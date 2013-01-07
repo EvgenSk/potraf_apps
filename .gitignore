@@ -1,3 +1,8 @@
 *~
 *#
 *.beam
+cowboy/
+eredis/
+ranch/
+rel/*
+!rel/reltool.config

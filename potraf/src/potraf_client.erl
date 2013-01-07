@@ -79,7 +79,7 @@ get_traffic_info(Connection, ZIP) ->
 	     package_windows_count = potraf_lib:to_list(potraf_lib:get(Connection, ZIP, package_windows_count))}.
 
 get_timestamps(ZIP) ->
-    get_timestamps(get_connection(?RAW_DATA), ZIP).
+    get_timestamps(get_connection(?RESULT), ZIP).
 
 get_timestamps(Connection, ZIP) ->
     #timestamps{people_count = potraf_lib:to_list(potraf_lib:get_params_timestamp(Connection, ZIP, people_count)),

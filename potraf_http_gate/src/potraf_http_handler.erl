@@ -8,7 +8,7 @@
 
 -include_lib("definitions.hrl").
 
--import(lists, [map/2]).
+-import(lists, [map/2, zip/2]).
 
 %% 
 %% API
@@ -32,29 +32,36 @@ terminate(_Req, _State) ->
 %% 
 
 get_potraf_req(<<"GET">>, Req) ->
-    {QSVals_bin, Req2} = cowboy_req:qs_vals(Req),
-    QSVals = map(fun({Key, Val})-> {binary_to_atom(Key, latin1), 
-				    binary_to_list(Val)}
-		 end, 
-		 QSVals_bin),
-    case proplists:get_value(request) of
-	get -> {get_req(proplists:get_value(zip, QSVals)), Req2};
-	add -> {add_req(QSVals), Req2}	        
+    case cowboy_req:qs_val(<<"request">>, Req) of
+    	{<<"get">>, Req2} -> {get_req(Req), Req2};
+    	{<<"add">>, Req2} -> {add_req(Req), Req2};
+    	_ -> #potraf_req{request = get, param = 630064}
     end.
-    
-get_req(ZIP) ->
+
+get_req(Req) ->
+    {ZIP_bin, _Req2} = cowboy_req:qs_val(<<"zip">>, Req),
+    ZIP = list_to_integer(binary_to_list(ZIP_bin)),
     #potraf_req{request = get,
 		param = ZIP}.
 
-add_req(QSVals) ->
+add_req(Req) ->
+    Vals = map(fun(Val) -> qs_val_to_int(Val) end,
+	       map(fun(Id)-> 
+			   {Val, _Req2} = cowboy_req:qs_val(atom_to_binary(Id, latin1), Req),
+			   Val 
+		   end,
+		   record_info(fields, traffic))),
+    KeyVals = lists:zip(record_info(fields, traffic), Vals),
+    {ZIP_bin, _Req2} = cowboy_req:qs_val(<<"zip">>, Req),
+    ZIP = list_to_integer(binary_to_list(ZIP_bin)),
     #potraf_req{request = add,
 		param = 
-		    {proplists:get_value(zip, QSVals),
+		    {ZIP,
 		    #traffic{
-		       people_count = proplists:get_value(people_count, QSVals),
-		       service_time = proplists:get_value(service_time, QSVals),
-		       post_windows_count = proplists:get_value(post_windows_count, QSVals),
-		       package_windows_count = proplists:get_value(package_windows_count, QSVals)}}}.
+		       people_count = proplists:get_value(people_count, KeyVals),
+		       service_time = proplists:get_value(service_time, KeyVals),
+		       post_windows_count = proplists:get_value(post_windows_count, KeyVals),
+		       package_windows_count = proplists:get_value(package_windows_count, KeyVals)}}}.
 
 send_potraf_req(Req = #potraf_req{request = get}) ->
     {ok, Client} = potraf_client:start_link(),
@@ -62,7 +69,7 @@ send_potraf_req(Req = #potraf_req{request = get}) ->
     gen_server:call(Client, Req);
 
 send_potraf_req(Req = #potraf_req{request = add}) ->
-    {ok, Client} = potraf:start_link(),
+    {ok, Client} = potraf_client:start_link(),
     %% may ne add Client to potraf_sup
     gen_server:cast(Client, Req),
     ok;
@@ -85,13 +92,19 @@ send_response(Reply_type, Reply, Req) ->
 
 wrap_potraf_repl(simple, {Traf, Time}) ->
     string:join([to_KeyVal_list_string(Traf), 
-		 to_KeyVal_list_string(Time)], 
-		"|").
+    		 to_KeyVal_list_string(Time)], 
+    		"|").
 
 to_KeyVal_list_string(Rec) ->
     KeyVal_pairs = 
 	map(fun({Id, Val}) -> 
-		    string:join([atom_to_list(Id), float_to_list(Val)], ":") 
+		    string:join([atom_to_list(Id), Val], ":") 
 	    end,
 	    ?record_to_tuplelist(traffic, Rec)),
     string:join(KeyVal_pairs, ";").
+
+qs_val_to_int(QSVal) ->
+    case QSVal of
+	undefined -> undefined; 
+	_ -> list_to_integer(binary_to_list(QSVal)) 
+    end.

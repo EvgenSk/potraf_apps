@@ -81,6 +81,12 @@ set_result_timestamp(Connection, ZIP, Timestamp) ->
     set_by_string(Connection, Second_str, Second).
     
 
+get_connection(result) ->
+    get_connection(0);
+
+get_connection(raw_data) ->
+    get_connection(1);
+
 get_connection(Num) ->
     {ok, C} = eredis:start_link(),
     eredis:q(C, ["SELECT", Num]),
@@ -223,7 +229,7 @@ list_to_int_or_atom(X)->
 
 timestamp_to_list(Timestamp) ->
     case Timestamp of
-	{undefined, _} -> undefined;
-	{_, undefined} -> indefined;
+	{undefined, _} -> "undefined";
+	{_, undefined} -> "undefined";
 	{Mega, Second} -> lists:concat([to_list(Mega), to_list(Second)])
     end.

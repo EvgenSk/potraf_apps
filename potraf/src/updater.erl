@@ -64,24 +64,31 @@ terminate(normal, _State) ->
 %% 
 
 update_data() ->
-    Connection = potraf_client:get_connection(result),
-    update_each_zip(Connection),
-    potraf_lib:swap_upd_zips(Connection),
+    Res_connection = potraf_lib:get_connection(?RESULT),
+    Raw_connection = potraf_lib:get_connection(?RAW_DATA),
+    update_each_zip(Res_connection),
+    potraf_lib:swap_upd_zips(Res_connection),
     gen_server:cast(?INFORMER, #data_req{request = updating_finished}).
 
-update_each_zip(Connection) ->
-    ZIP_bin = potraf_lib:get_zip_for_upd(Connection),
+update_each_zip(Res_connection, Raw_connection) ->
+    ZIP_bin = potraf_lib:get_zip_for_upd(Res_connection),
     case ZIP_bin of
 	undefined -> ok;
 	_ -> 
 	    ZIP = list_to_integer(binary:bin_to_list(ZIP_bin)),
 	    Avg_vals = map(fun(Param) -> 
 				   {Param, 
-				    potraf_lib:get_average_for_time(Connection, {minute, 5}, ZIP, Param)} end, % {minute, 5} must be somethiing else for increment
+				    potraf_lib:get_average_for_time(Raw_connection, {minute, 5}, ZIP, Param)} end, % {minute, 5} must be somethiing else for increment
 			   record_info(fields, traffic)),
-	    foreach(fun({Id, Val}) -> potraf_lib:set(Connection, ZIP, Id, Val) end, 
+	    foreach(fun({Id, Val}) -> potraf_lib:set(Res_connection, ZIP, Id, Val) end, 
 		    Avg_vals),
-	    potraf_lib:set_result_timestamp(Connection, ZIP, now()),
-	    update_each_zip(Connection)
+	    update_timestamps(Res_connection, Raw_connection, ZIP),
+	    update_each_zip(Res_connection)
     end.
     
+update_timestamps(Res_connection, Raw_connection, ZIP) ->
+    foreach(fun(Param) -> {Mega, Second} = potraf_lib:get_last_timestamp(Raw_connection, ZIP, Param),
+			  potraf_lib:set_last_timestamp(Res_connection, ZIP, Param, {Mega, Second, undefined}) end,
+	    record_info(fields, traffic)),
+	    potraf_lib:set_result_timestamp(Res_connection, ZIP, now()).
+	    

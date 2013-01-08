@@ -33,26 +33,52 @@ terminate(_Req, _State) ->
 
 get_potraf_req(<<"GET">>, Req) ->
     case cowboy_req:qs_val(<<"request">>, Req) of
-    	{<<"get">>, Req2} -> {get_req(Req), Req2};
-    	{<<"add">>, Req2} -> {add_req(Req), Req2};
-    	_ -> #potraf_req{request = get, param = 630064}
-    end.
+    	{<<"get">>, Req2} -> {get_req(get, Req2), Req2};
+    	{<<"add">>, Req2} -> {add_req(get, Req2), Req2}
+    end;
 
-get_req(Req) ->
+get_potraf_req(<<"POST">>, Req) ->
+    case cowboy_req:has_body(Req) of
+	{true, Req2} -> {fetch_req(Req2), Req2};
+	{false, Req2} -> {ok, Req2}
+    end.
+    
+%% for GET HTTP-requests
+
+get_req(get, Req) ->
     {ZIP_bin, _Req2} = cowboy_req:qs_val(<<"zip">>, Req),
+    ZIP = list_to_integer(binary_to_list(ZIP_bin)),
+    #potraf_req{request = get,
+		param = ZIP};
+
+get_req(post, PostVals) ->
+    ZIP_bin = proplists:get_value(<<"zip">>, PostVals),
     ZIP = list_to_integer(binary_to_list(ZIP_bin)),
     #potraf_req{request = get,
 		param = ZIP}.
 
-add_req(Req) ->
+add_req(get, Req) ->
+    get_potraf_req_by_func(fun(Id) -> {Val, _} = cowboy_req:qs_val(atom_to_binary(Id, latin1), Req), 
+				      Val end);
+
+add_req(post, PostVals) ->
+    get_potraf_req_by_func(fun(Id) -> proplists:get_value(atom_to_binary(Id, latin1), PostVals) end).
+
+%% for POST HTTP-requests
+
+fetch_req(Req) ->
+    {ok, PostVals, _} = cowboy_req:body_qs(Req),
+    case proplists:get_value(<<"request">>, PostVals) of
+	<<"get">> -> get_req(post, PostVals);
+	<<"add">> -> add_req(post, PostVals)
+    end.
+    
+get_potraf_req_by_func(Func) ->
     Vals = map(fun(Val) -> qs_val_to_int(Val) end,
-	       map(fun(Id)-> 
-			   {Val, _Req2} = cowboy_req:qs_val(atom_to_binary(Id, latin1), Req),
-			   Val 
-		   end,
+	       map(fun(Id)-> Func(Id) end,
 		   record_info(fields, traffic))),
     KeyVals = lists:zip(record_info(fields, traffic), Vals),
-    {ZIP_bin, _Req2} = cowboy_req:qs_val(<<"zip">>, Req),
+    ZIP_bin = Func(zip),
     ZIP = list_to_integer(binary_to_list(ZIP_bin)),
     #potraf_req{request = add,
 		param = 
@@ -61,7 +87,7 @@ add_req(Req) ->
 		       people_count = proplists:get_value(people_count, KeyVals),
 		       service_time = proplists:get_value(service_time, KeyVals),
 		       post_windows_count = proplists:get_value(post_windows_count, KeyVals),
-		       package_windows_count = proplists:get_value(package_windows_count, KeyVals)}}}.
+		       package_windows_count = proplists:get_value(package_windows_count, KeyVals)}}}.    
 
 send_potraf_req(Req = #potraf_req{request = get}) ->
     potraf_client:request(Req);

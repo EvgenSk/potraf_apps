@@ -4,13 +4,15 @@
 
 -export([start_link/0, start_link/1]).
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2, code_change/3, terminate/2]).
+-export([request/1, request/2]).
+-export([async_request/1, async_request/2]).
 
 -include("definitions.hrl").
 
 -import(lists, [foreach/2, filter/2]).
 
 %% 
-%% API (gen_server functions)
+%% API
 %% 
 
 start_link() ->
@@ -21,6 +23,20 @@ start_link(ServerName) ->
 
 init(_Args) ->
     {ok, ready}.
+
+request(Client, Req) ->
+    gen_server:call(Client, Req).
+
+request(Req) ->
+    {ok, Client} = start_link(),
+    request(Client, Req).
+
+async_request(Client, Req) ->
+    gen_server:cast(Client, Req).
+
+async_request(Req) ->
+    {ok, Client} = start_link(),
+    async_request(Client, Req).
 
 %% handle_call
 
@@ -82,11 +98,11 @@ get_timestamps(ZIP) ->
     get_timestamps(get_connection(?RESULT), ZIP).
 
 get_timestamps(Connection, ZIP) ->
-    #timestamps{people_count = potraf_lib:to_list(potraf_lib:get_params_timestamp(Connection, ZIP, people_count)),
-		service_time = potraf_lib:to_list(potraf_lib:get_params_timestamp(Connection, ZIP, service_time)),
-		increment = potraf_lib:to_list(potraf_lib:get_params_timestamp(Connection, ZIP, increment)),
-		post_windows_count = potraf_lib:to_list(potraf_lib:get_params_timestamp(Connection, ZIP, post_windows_count)),
-		package_windows_count = potraf_lib:to_list(potraf_lib:get_params_timestamp(Connection, ZIP, package_windows_count))}.
+    #timestamps{people_count = potraf_lib:to_list(potraf_lib:get_last_timestamp(Connection, ZIP, people_count)),
+		service_time = potraf_lib:to_list(potraf_lib:get_last_timestamp(Connection, ZIP, service_time)),
+		increment = potraf_lib:to_list(potraf_lib:get_last_timestamp(Connection, ZIP, increment)),
+		post_windows_count = potraf_lib:to_list(potraf_lib:get_last_timestamp(Connection, ZIP, post_windows_count)),
+		package_windows_count = potraf_lib:to_list(potraf_lib:get_last_timestamp(Connection, ZIP, package_windows_count))}.
 
 add_traffic_info(ZIP, Traf_info) ->
     add_traffic_info(get_connection(?RAW_DATA), ZIP, Traf_info).
@@ -106,7 +122,7 @@ add_timestamps_info(Connection, ZIP, Timestamp) ->
 set_last_timestamps(ZIP, Traf_info, Timestamp) ->
     set_last_timestamps(get_connection(?RESULT), ZIP, Traf_info, Timestamp).
 
-set_last_timestamps(Connection, ZIP, Traf_info, Timestamp) ->
+set_last_timestamps(Connection, ZIP, Traf_info, Timestamp) -> 
     foreach(fun({Id, _Val}) -> potraf_lib:set_last_timestamp(Connection, ZIP, Id, Timestamp) end,
 	    filter(fun({_, Val})-> potraf_lib:is_useful(Val) end, 
 		   ?record_to_tuplelist(traffic, Traf_info))).

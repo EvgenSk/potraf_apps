@@ -64,14 +64,10 @@ add_req(Req) ->
 		       package_windows_count = proplists:get_value(package_windows_count, KeyVals)}}}.
 
 send_potraf_req(Req = #potraf_req{request = get}) ->
-    {ok, Client} = potraf_client:start_link(),
-    %% may ne add Client to potraf_sup
-    gen_server:call(Client, Req);
+    potraf_client:request(Req);
 
 send_potraf_req(Req = #potraf_req{request = add}) ->
-    {ok, Client} = potraf_client:start_link(),
-    %% may ne add Client to potraf_sup
-    gen_server:cast(Client, Req),
+    potraf_client:async_request(Req),
     ok;
 
 send_potraf_req(_Req) ->

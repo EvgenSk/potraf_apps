@@ -66,7 +66,7 @@ terminate(normal, _State) ->
 update_data() ->
     Res_connection = potraf_lib:get_connection(?RESULT),
     Raw_connection = potraf_lib:get_connection(?RAW_DATA),
-    update_each_zip(Res_connection),
+    update_each_zip(Res_connection, Raw_connection),
     potraf_lib:swap_upd_zips(Res_connection),
     gen_server:cast(?INFORMER, #data_req{request = updating_finished}).
 
@@ -83,7 +83,7 @@ update_each_zip(Res_connection, Raw_connection) ->
 	    foreach(fun({Id, Val}) -> potraf_lib:set(Res_connection, ZIP, Id, Val) end, 
 		    Avg_vals),
 	    update_timestamps(Res_connection, Raw_connection, ZIP),
-	    update_each_zip(Res_connection)
+	    update_each_zip(Res_connection, Raw_connection)
     end.
     
 update_timestamps(Res_connection, Raw_connection, ZIP) ->

@@ -1,16 +1,19 @@
 {application, potraf,
  [{description, "POst Office TRAFfic application"},
   {vsn, "1.0.0"},
-  {modules, [potraf, 
+  {modules, [potraf,
+	     potraf_app, 
 	     potraf_sup,
-	     potraf_client,
 	     potraf_lib,
 	     informer,
 	     updater,
 	     potraf_adders_sup,
 	     potraf_getters_sup,
 	     update_event_handler,
-	     update_event_manager]},
+	     update_event_manager,
+	     potraf_adder,
+	     potraf_getter,
+	     utils]},
   {registered, [potraf, 
 		informer, 
 		updater, 
@@ -23,5 +26,5 @@
 		  stdlib,
 		  eredis
 		 ]},
-  {mod, {potraf, []}}
+  {mod, {potraf_app, []}}
  ]}.

@@ -76,19 +76,37 @@ update_each_zip(Res_connection, Raw_connection) ->
 	undefined -> ok;
 	_ -> 
 	    ZIP = list_to_integer(binary:bin_to_list(ZIP_bin)),
-	    Avg_vals = map(fun(Param) -> 
-				   {Param, 
-				    potraf_lib:get_average_for_time(Raw_connection, {minute, 5}, ZIP, Param)} end, % {minute, 5} must be somethiing else for increment
-			   record_info(fields, traffic)),
-	    foreach(fun({Id, Val}) -> potraf_lib:set(Res_connection, ZIP, Id, Val) end, 
-		    Avg_vals),
-	    update_timestamps(Res_connection, Raw_connection, ZIP),
+	    update_data_and_notify(Res_connection, Raw_connection, ZIP),
 	    update_each_zip(Res_connection, Raw_connection)
     end.
+
+update_data_and_notify(Res_connection, Raw_connection, ZIP) ->
+    Avg_vals = get_average_vals(Raw_connection, ZIP, {minute, 5}),
+    write_vals_to_db(Res_connection, ZIP, Avg_vals),
+    Res_vals = potraf_lib:get_traffic_info(Res_connection, ZIP),
+    Timestamps = get_last_timestamps(Raw_connection, ZIP),
+    write_timestamps_to_db(Res_connection, ZIP, Timestamps),
+    Res_timestamps = potraf_lib:get_timestamps(Res_connection, ZIP),
+    gen_event:notify(?UPD_EVENT_MGR, {updated, ZIP, {Res_vals, Res_timestamps}}),
+    ok.
     
-update_timestamps(Res_connection, Raw_connection, ZIP) ->
-    foreach(fun(Param) -> {Mega, Second} = potraf_lib:get_last_timestamp(Raw_connection, ZIP, Param),
-			  potraf_lib:set_last_timestamp(Res_connection, ZIP, Param, {Mega, Second, undefined}) end,
-	    record_info(fields, traffic)),
-	    potraf_lib:set_result_timestamp(Res_connection, ZIP, now()).
-	    
+    
+get_average_vals(Connection, ZIP, Time_interval) ->
+    map(fun(Param) -> 
+		{Param, 
+		 potraf_lib:get_average_for_time(Connection, Time_interval, ZIP, Param)} end,
+	record_info(fields, traffic)).
+
+write_vals_to_db(Connection, ZIP, Vals) ->
+    foreach(fun({Id, Val}) -> potraf_lib:set(Connection, ZIP, Id, Val) end, 
+	    Vals).
+
+get_last_timestamps(Connection, ZIP) ->
+    map(fun(Param) -> {Param,
+		       potraf_lib:get_last_timestamp(Connection, ZIP, Param)} end,
+	    record_info(fields, traffic)).
+
+write_timestamps_to_db(Connection, ZIP, Timestamps) ->
+    foreach(fun({Param, {Mega, Second}}) -> 
+		    potraf_lib:set_last_timestamp(Connection, ZIP, Param, {Mega, Second, undefined}) end,
+	   Timestamps).

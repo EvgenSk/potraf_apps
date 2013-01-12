@@ -4,7 +4,6 @@
 -export([get/3]).
 -export([add/4]).
 -export([get_last_n/4]).
--export([bin_to_num/1]).
 -export([get_params_timestamp/3]).
 -export([set_params_timestamp/4]).
 -export([add_params_timestamp/4]).
@@ -24,14 +23,14 @@
 -export([swap_upd_zips/1]).
 -export([check_need_upd/2]).
 -export([is_useful/1]).
--export([timestamp_to_list/1]).
--export([to_int_or_atom/1]).
--export([to_list/1]).
 -export([set_result_timestamp/3]).
+-export([get_timestamps/2]).
+-export([get_traffic_info/2]).
 
-%%-include("../include/eredis.hrl").
+-include("definitions.hrl").
 
 -import(lists, [map/2, sum/1]).
+-import(utils, [bin_to_num/1, timestamp_to_list/1, to_int_or_atom/1, to_list/1]).
 
 %% 
 %% Internal functions
@@ -180,6 +179,20 @@ set_last_timestamp(Connection, ZIP, Param, Timestamp) ->
     {set_by_string(Connection, add_actual_suff(Mega_str), Mega_val),
      set_by_string(Connection, add_actual_suff(Seconds_str), Seconds_val)}.
 
+get_timestamps(Connection, ZIP) ->
+    #timestamps{people_count = timestamp_to_list(get_last_timestamp(Connection, ZIP, people_count)),
+		service_time = timestamp_to_list(get_last_timestamp(Connection, ZIP, service_time)),
+		increment = timestamp_to_list(get_last_timestamp(Connection, ZIP, increment)),
+		post_windows_count = timestamp_to_list(get_last_timestamp(Connection, ZIP, post_windows_count)),
+		package_windows_count = timestamp_to_list(get_last_timestamp(Connection, ZIP, package_windows_count))}.
+
+get_traffic_info(Connection, ZIP) ->
+    #traffic{people_count = to_list(get(Connection, ZIP, people_count)),
+	     service_time = to_list(get(Connection, ZIP, service_time)),
+	     increment = to_list(get(Connection, ZIP, increment)),
+	     post_windows_count = to_list(get(Connection, ZIP, post_windows_count)),
+	     package_windows_count = to_list(get(Connection, ZIP, package_windows_count))}.
+
 get_zip_for_upd(Connection) ->
     {ok, Val} = eredis:q(Connection, ["SPOP", get_update_key(main)]),
     Val.
@@ -203,33 +216,4 @@ check_need_upd(Connection, ZIP) ->
     case bin_to_num(Bin_res) of
 	1 -> ready;
 	0 -> updating
-    end.
-	    
-bin_to_num(Bin) ->
-    N = binary_to_list(Bin),
-    case string:to_float(N) of
-        {error,no_float} -> list_to_integer(N);
-        {F,_Rest} -> F
-    end.
-
-to_list(X) when is_binary(X) -> binary_to_list(X);
-to_list(X) when is_atom(X) -> atom_to_list(X);
-to_list(X) when is_integer(X) -> integer_to_list(X).
-
-to_int_or_atom(X) when is_atom(X) -> X;
-to_int_or_atom(X) when is_integer(X) -> X;
-to_int_or_atom(X) when is_binary(X) -> to_int_or_atom(binary_to_list(X));
-to_int_or_atom(X) when is_list(X) -> list_to_int_or_atom(X). 
-
-list_to_int_or_atom(X)->
-    case catch list_to_integer(X) of
-	{'EXIT', {badarg, _}} -> list_to_atom(X);
-	N -> N
-    end.
-
-timestamp_to_list(Timestamp) ->
-    case Timestamp of
-	{undefined, _} -> "undefined";
-	{_, undefined} -> "undefined";
-	{Mega, Second} -> lists:concat([to_list(Mega), to_list(Second)])
     end.

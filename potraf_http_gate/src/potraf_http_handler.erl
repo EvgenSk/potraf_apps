@@ -89,15 +89,8 @@ get_potraf_req_by_func(Func) ->
 		       post_windows_count = proplists:get_value(post_windows_count, KeyVals),
 		       package_windows_count = proplists:get_value(package_windows_count, KeyVals)}}}.    
 
-send_potraf_req(Req = #potraf_req{request = get}) ->
-    potraf_client:request(Req);
-
-send_potraf_req(Req = #potraf_req{request = add}) ->
-    potraf_client:async_request(Req),
-    ok;
-
-send_potraf_req(_Req) ->
-    undefined.
+send_potraf_req(Req) ->
+    potraf:request(Req).
 
 send_response(_Repl_type, undefined, Req) ->
     cowboy_req:reply(400, [], <<"Missing request parameters.">>, Req);

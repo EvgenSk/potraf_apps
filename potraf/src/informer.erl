@@ -4,6 +4,7 @@
 
 -export([start_link/2, start_link/3]).
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2, code_change/3, terminate/2]).
+-export([get_updating_status/0]).
 
 -include("definitions.hrl").
 
@@ -77,3 +78,9 @@ code_change(_OldVsn, State, _Extra) ->
 
 terminate(normal, _State) ->
     ok.
+
+%% Export functions
+
+get_updating_status() ->
+    gen_server:call(?INFORMER, #data_req{request = info, info_type = updating_status}).
+

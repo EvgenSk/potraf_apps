@@ -29,13 +29,13 @@ init([]) ->
 	       infinity,
 	       worker,
 	       [?UPDATER]},
-    Getters_sup = {getters_sup,
+    Getters_sup = {potraf_getters_sup,
 		   {potraf_getters_sup, start_link, []},
 		   permanent,
 		   infinity,
 		   supervisor,
 		   [potraf_getters_sup]},
-    Adders_sup = {adders_sup,
+    Adders_sup = {potraf_adders_sup,
 		  {potraf_adders_sup, start_link, []},
 		  permanent,
 		  infinity,
@@ -49,5 +49,5 @@ init([]) ->
 			    dynamic},
     {ok, 
      {{one_for_one, 5, 60}, 		
-      [Informer, Updater, Getters_sup, Adders_sup, Update_event_manager]
+      [Informer, Updater, Getters_sup, Update_event_manager]
      }}.

@@ -10,6 +10,7 @@
 -define(HTTP_HANDLER, http_handler).
 -define(UPDATER, updater).
 -define(INFORMER, informer).
+-define(UPD_EVENT_MGR, update_event_manager).
 
 %% Useless element
 

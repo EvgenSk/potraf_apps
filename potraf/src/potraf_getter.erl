@@ -29,10 +29,10 @@ handle_call(#potraf_req{request = get, param = ZIP}, From, State) ->
 	ready -> 
 	    Traffic = get_traffic_info(ZIP),
 	    Timestamps = get_timestamps(ZIP),
-	    {reply, {Traffic, Timestamps}, State}; % TODO: may be we need record for reply {Traffic, Timestamps}
+	    {stop, normal, {Traffic, Timestamps}, State}; % TODO: may be we need record for reply {Traffic, Timestamps}
 	_ -> 
 	    gen_event:add_handler(?UPD_EVENT_MGR, update_event_handler, [From, ZIP]),
-	    {noreply, State}
+	    {noreply, State, 500}
     end.
 
 %% handle_cast
@@ -41,6 +41,9 @@ handle_cast(_Msg, State) ->
     {noreply, State}.
 
 %% handle_info
+
+handle_info(timeout, State) ->
+    {stop, normal, State};
 
 handle_info(_Message, State) ->
     {noreply, State}.

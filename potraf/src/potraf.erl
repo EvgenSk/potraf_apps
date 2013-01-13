@@ -21,14 +21,11 @@ request(_Req) ->
 
 
 get_data(ZIP) ->
-    {ok, C} = potraf_getter:start_link(),
+    {ok, C} = supervisor:start_child(potraf_getters_sup, []),
     gen_server:call(C, #potraf_req{request = get, param = ZIP}).
 
 add_data(ZIP, Traffic) ->
     Adder_name = ?name(ZIP),
-    case whereis(Adder_name) of 
-	undefined -> 
-	    potraf_adder:start_link({local, Adder_name})
-    end,
-    gen_server:cast(Adder_name, #potraf_req{request = add, param = {ZIP, Traffic}}),
+    supervisor:start_child(potraf_adders_sup, [{local, Adder_name}]),
+    gen_server:cast(Adder_name, #potraf_req{request = add, param = {ZIP, Traffic, now()}}),
     ok.

@@ -20,6 +20,7 @@
 -export([get_zip_for_upd/1]).
 -export([get_update_key/1]).
 -export([mark_for_upd/3]).
+-export([unmark_for_upd/2]).
 -export([swap_upd_zips/1]).
 -export([check_need_upd/2]).
 -export([is_useful/1]).
@@ -194,7 +195,7 @@ get_traffic_info(Connection, ZIP) ->
 	     package_windows_count = to_list(get(Connection, ZIP, package_windows_count))}.
 
 get_zip_for_upd(Connection) ->
-    {ok, Val} = eredis:q(Connection, ["SPOP", get_update_key(main)]),
+    {ok, Val} = eredis:q(Connection, ["SRANDMEMBER", get_update_key(main)]),
     Val.
 
 get_update_key(main) ->
@@ -205,6 +206,9 @@ get_update_key(tmp) ->
 
 mark_for_upd(Connection, Key, ZIP) ->
     eredis:q(Connection, ["SADD", Key, ZIP]).
+
+unmark_for_upd(Connection, ZIP) ->
+    eredis:q(Connection, ["SREM", get_update_key(main), ZIP]).
 
 swap_upd_zips(Connection) ->
     eredis:q(Connection, ["SUNIONSTORE", get_update_key(main), get_update_key(tmp)]),

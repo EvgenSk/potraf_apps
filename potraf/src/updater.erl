@@ -87,6 +87,7 @@ update_data_and_notify(Res_connection, Raw_connection, ZIP) ->
     Timestamps = get_last_timestamps(Raw_connection, ZIP),
     write_timestamps_to_db(Res_connection, ZIP, Timestamps),
     Res_timestamps = potraf_lib:get_timestamps(Res_connection, ZIP),
+    potraf_lib:unmark_for_upd(Res_connection, ZIP),
     gen_event:notify(?UPD_EVENT_MGR, {updated, ZIP, {Res_vals, Res_timestamps}}),
     ok.
     

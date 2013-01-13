@@ -10,10 +10,10 @@ start_link() ->
 
 init([]) ->
     {ok, {{simple_one_for_one, 5, 60},
-	  [potraf_getter,
-	   {potraf_getter, start_link, []},
-	   temporary, 
-	   infinity, 
-	   worker, 
-	   [potraf_getter]
+	  [{potraf_getter,
+	    {potraf_getter, start_link, []},
+	    temporary, 
+	    5000, 
+	    worker, 
+	    [potraf_getter]}
 	  ]}}.

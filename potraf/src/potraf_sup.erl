@@ -49,5 +49,5 @@ init([]) ->
 			    dynamic},
     {ok, 
      {{one_for_one, 5, 60}, 		
-      [Informer, Updater, Getters_sup, Update_event_manager]
+      [Informer, Updater, Getters_sup, Adders_sup, Update_event_manager]
      }}.

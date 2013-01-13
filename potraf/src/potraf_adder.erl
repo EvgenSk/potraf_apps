@@ -4,8 +4,6 @@
 
 -export([start_link/0, start_link/1]).
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2, code_change/3, terminate/2]).
--export([request/1, request/2]).
--export([async_request/1, async_request/2]).
 
 -include("definitions.hrl").
 
@@ -23,20 +21,6 @@ start_link(ServerName) ->
 
 init(_Args) ->
     {ok, ready}.
-
-request(Client, Req) ->
-    gen_server:call(Client, Req).
-
-request(Req) ->
-    {ok, Client} = start_link(),
-    request(Client, Req).
-
-async_request(Client, Req) ->
-    gen_server:cast(Client, Req).
-
-async_request(Req) ->
-    {ok, Client} = start_link(),
-    async_request(Client, Req).
 
 %% handle_call
 

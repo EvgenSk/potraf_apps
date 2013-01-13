@@ -13,7 +13,7 @@ init([]) ->
 	  [{potraf_getter,
 	    {potraf_getter, start_link, []},
 	    temporary, 
-	    5000, 
+	    1000, 
 	    worker, 
 	    [potraf_getter]}
 	  ]}}.

@@ -12,8 +12,8 @@ init([]) ->
     {ok, {{simple_one_for_one, 5, 60},
 	  [{potraf_adder,
 	    {potraf_adder, start_link, []},
-	    temporary, 
-	    5000, 
+	    transient, 
+	    1000, 
 	    worker, 
 	    [potraf_adder]}
 	  ]}}.

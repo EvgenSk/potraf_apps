@@ -60,23 +60,21 @@ add_traffic_info(ZIP, Traf_info) ->
 
 add_traffic_info(Connection, ZIP, Traf_info) ->
     foreach(fun({Id, Val}) -> potraf_lib:add(Connection, ZIP, Id, Val) end,
-	    ?record_to_tuplelist(traffic, Traf_info)).
+	    Traf_info).
 
-add_timestamps_info(ZIP, Timestamp) ->
-    add_timestamps_info(potraf_lib:get_connection(?RAW_DATA), ZIP, Timestamp).
+add_timestamps_info(ZIP, Fields, Timestamp) ->
+    add_timestamps_info(potraf_lib:get_connection(?RAW_DATA), ZIP, Fields, Timestamp).
 
-add_timestamps_info(Connection, ZIP, Timestamp) ->
-    Fields = record_info(fields, traffic),
+add_timestamps_info(Connection, ZIP, Fields, Timestamp) ->
     foreach(fun(Field) -> potraf_lib:add_params_timestamp(Connection, ZIP, Field, Timestamp) end, 
 	    Fields).
 
-set_last_timestamps(ZIP, Traf_info, Timestamp) ->
-    set_last_timestamps(potraf_lib:get_connection(?RAW_DATA), ZIP, Traf_info, Timestamp).
+set_last_timestamps(ZIP, Fields, Timestamp) ->
+    set_last_timestamps(potraf_lib:get_connection(?RAW_DATA), ZIP, Fields, Timestamp).
 
-set_last_timestamps(Connection, ZIP, Traf_info, Timestamp) -> 
-    foreach(fun({Id, _Val}) -> potraf_lib:set_last_timestamp(Connection, ZIP, Id, Timestamp) end,
-	    filter(fun({_, Val})-> potraf_lib:is_useful(Val) end, 
-		   ?record_to_tuplelist(traffic, Traf_info))).
+set_last_timestamps(Connection, ZIP, Fields, Timestamp) -> 
+    foreach(fun(Field) -> potraf_lib:set_last_timestamp(Connection, ZIP, Field, Timestamp) end,
+	    Fields).
 
 mark_for_upd(ZIP) ->
     Updating_key = 
@@ -87,7 +85,15 @@ mark_for_upd(ZIP) ->
     potraf_lib:mark_for_upd(potraf_lib:get_connection(?RESULT), Updating_key, ZIP).
 
 add_traffic_and_timestamps_info(ZIP, Traf_info, Timestamp) ->
-    mark_for_upd(ZIP),
-    add_traffic_info(ZIP, Traf_info),
-    add_timestamps_info(ZIP, Timestamp),
-    set_last_timestamps(ZIP, Traf_info, Timestamp).
+    Useful_elems = get_useful_elems(Traf_info),
+    if length(Useful_elems) > 0 ->
+	    mark_for_upd(ZIP),
+	    add_traffic_info(ZIP, Useful_elems),
+	    Useful_fields = lists:map(fun({Id, _Val})-> Id end, Useful_elems),
+	    add_timestamps_info(ZIP, Useful_fields, Timestamp),
+	    set_last_timestamps(ZIP, Useful_fields, Timestamp)
+    end.
+
+get_useful_elems(Traf_info) ->
+    filter(fun({_, Val})-> potraf_lib:is_useful(Val) end, 
+	   ?record_to_tuplelist(traffic, Traf_info)).

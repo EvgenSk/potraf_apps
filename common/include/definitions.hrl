@@ -25,7 +25,6 @@
 -record(traffic, 
 	{people_count,
 	 service_time,
-	 increment,
 	 post_windows_count,
 	 package_windows_count}).
 
@@ -34,7 +33,6 @@
 -record(timestamps, 
 	{people_count,
 	 service_time,
-	 increment,
 	 post_windows_count,
 	 package_windows_count}).
 

@@ -44,7 +44,6 @@ get_q_string(ZIP, Param) ->
     case Param of
 	people_count -> lists:concat([to_string(ZIP), ":", "people-count"]);
 	service_time -> lists:concat([to_string(ZIP), ":", "service-time"]);
-	increment -> lists:concat([to_string(ZIP), ":", "increment"]);
 	post_windows_count -> lists:concat([to_string(ZIP), ":", "post-windows-count"]);
 	package_windows_count -> lists:concat([to_string(ZIP), ":", "package-windows-count"])
     end.
@@ -183,14 +182,12 @@ set_last_timestamp(Connection, ZIP, Param, Timestamp) ->
 get_timestamps(Connection, ZIP) ->
     #timestamps{people_count = timestamp_to_list(get_last_timestamp(Connection, ZIP, people_count)),
 		service_time = timestamp_to_list(get_last_timestamp(Connection, ZIP, service_time)),
-		increment = timestamp_to_list(get_last_timestamp(Connection, ZIP, increment)),
 		post_windows_count = timestamp_to_list(get_last_timestamp(Connection, ZIP, post_windows_count)),
 		package_windows_count = timestamp_to_list(get_last_timestamp(Connection, ZIP, package_windows_count))}.
 
 get_traffic_info(Connection, ZIP) ->
     #traffic{people_count = to_list(get(Connection, ZIP, people_count)),
 	     service_time = to_list(get(Connection, ZIP, service_time)),
-	     increment = to_list(get(Connection, ZIP, increment)),
 	     post_windows_count = to_list(get(Connection, ZIP, post_windows_count)),
 	     package_windows_count = to_list(get(Connection, ZIP, package_windows_count))}.
 

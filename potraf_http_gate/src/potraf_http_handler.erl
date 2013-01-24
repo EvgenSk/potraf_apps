@@ -110,17 +110,6 @@ wrap_potraf_repl(simple, Potraf_repl) ->
 			     string:join([utils:to_list(Key), Val, Time], ":") end,
 		     Potraf_repl),
     string:join(KeyValTime, ";").
-    %% string:join([to_KeyVal_list_string(Traf), 
-    %% 		 to_KeyVal_list_string(Time)], 
-    %% 		"|").
-
-%% to_KeyVal_list_string(Rec) ->
-%%     KeyVal_pairs = 
-%% 	map(fun({Id, Val}) -> 
-%% 		    string:join([atom_to_list(Id), Val], ":") 
-%% 	    end,
-%% 	    ?record_to_tuplelist(traffic, Rec)),
-%%     string:join(KeyVal_pairs, ";").
 
 qs_val_to_int(QSVal) ->
     case QSVal of

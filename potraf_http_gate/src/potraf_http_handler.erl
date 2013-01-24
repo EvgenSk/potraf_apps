@@ -105,18 +105,22 @@ send_response(Reply_type, Reply, Req) ->
 		     Wrapped_repl, 
 		     Req).
 
-wrap_potraf_repl(simple, {Traf, Time}) ->
-    string:join([to_KeyVal_list_string(Traf), 
-    		 to_KeyVal_list_string(Time)], 
-    		"|").
+wrap_potraf_repl(simple, Potraf_repl) ->
+    KeyValTime = map(fun({Key, Val, Time})-> 
+			     string:join([utils:to_list(Key), Val, Time], ":") end,
+		     Potraf_repl),
+    string:join(KeyValTime, ";").
+    %% string:join([to_KeyVal_list_string(Traf), 
+    %% 		 to_KeyVal_list_string(Time)], 
+    %% 		"|").
 
-to_KeyVal_list_string(Rec) ->
-    KeyVal_pairs = 
-	map(fun({Id, Val}) -> 
-		    string:join([atom_to_list(Id), Val], ":") 
-	    end,
-	    ?record_to_tuplelist(traffic, Rec)),
-    string:join(KeyVal_pairs, ";").
+%% to_KeyVal_list_string(Rec) ->
+%%     KeyVal_pairs = 
+%% 	map(fun({Id, Val}) -> 
+%% 		    string:join([atom_to_list(Id), Val], ":") 
+%% 	    end,
+%% 	    ?record_to_tuplelist(traffic, Rec)),
+%%     string:join(KeyVal_pairs, ";").
 
 qs_val_to_int(QSVal) ->
     case QSVal of

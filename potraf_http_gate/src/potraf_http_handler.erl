@@ -1,6 +1,5 @@
 
 -module(potraf_http_handler).
--behaviour(cowboy_http_handler).
 
 -export([init/3]).
 -export([handle/2]).

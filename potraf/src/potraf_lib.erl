@@ -28,7 +28,7 @@
 -export([get_timestamps/2]).
 -export([get_traffic_info/2]).
 
--include("definitions.hrl").
+-include_lib("definitions.hrl").
 
 -import(lists, [map/2, sum/1]).
 -import(utils, [bin_to_num/1, timestamp_to_list/1, to_int_or_atom/1, to_list/1]).

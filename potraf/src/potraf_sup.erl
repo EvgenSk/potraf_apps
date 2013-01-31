@@ -8,7 +8,7 @@
 -export([start_link/0, start_link/1]).
 -export([init/1]).
 
--include("definitions.hrl").
+-include_lib("definitions.hrl").
 
 start_link() ->
     supervisor:start_link({local, ?MODULE}, ?MODULE, []).

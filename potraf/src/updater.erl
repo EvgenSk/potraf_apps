@@ -7,7 +7,7 @@
 
 -import(lists, [map/2, foreach/2]).
 
--include("definitions.hrl").
+-include_lib("definitions.hrl").
 
 %% 
 %% API (gen_server functions)

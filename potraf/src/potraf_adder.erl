@@ -79,8 +79,8 @@ set_last_timestamps(Connection, ZIP, Fields, Timestamp) ->
 mark_for_upd(ZIP) ->
     Updating_key = 
 	case informer:get_updating_status() of
-	    ready -> main;
-	    _ -> tmp
+	    #data_status{status = updating} -> tmp;
+	    _ -> main
 	end,
     potraf_lib:mark_for_upd(potraf_lib:get_connection(?RESULT), Updating_key, ZIP).
 

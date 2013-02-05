@@ -202,7 +202,7 @@ get_update_key(tmp) ->
     "need-update-tmp".
 
 mark_for_upd(Connection, Key, ZIP) ->
-    eredis:q(Connection, ["SADD", get_update_key(Key), to_list(ZIP)]).
+    eredis:q(Connection, ["SADD", get_update_key(Key), ZIP]).
 
 unmark_for_upd(Connection, ZIP) ->
     eredis:q(Connection, ["SREM", get_update_key(main), ZIP]).

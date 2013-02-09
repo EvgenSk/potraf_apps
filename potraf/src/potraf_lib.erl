@@ -37,21 +37,18 @@
 %% Internal functions
 %% 
 
-to_string(Some) ->
-    lists:flatten(io_lib:format("~p", [Some])).
-
 get_q_string(ZIP, Param) ->
     case Param of
-	people_count -> lists:concat([to_string(ZIP), ":", "people-count"]);
-	service_time -> lists:concat([to_string(ZIP), ":", "service-time"]);
-	post_windows_count -> lists:concat([to_string(ZIP), ":", "post-windows-count"]);
-	package_windows_count -> lists:concat([to_string(ZIP), ":", "package-windows-count"])
+	people_count -> lists:concat([to_list(ZIP), ":", "people-count"]);
+	service_time -> lists:concat([to_list(ZIP), ":", "service-time"]);
+	post_windows_count -> lists:concat([to_list(ZIP), ":", "post-windows-count"]);
+	package_windows_count -> lists:concat([to_list(ZIP), ":", "package-windows-count"])
     end.
 
 get_timestamp_q_strings(ZIP, Param) ->
     Timestamp_param = 
 	case Param of
-	    res_timestamp -> lists:concat([to_string(ZIP), ":", "res-timestamp"]);
+	    res_timestamp -> lists:concat([to_list(ZIP), ":", "res-timestamp"]);
 	    _ -> lists:concat([get_q_string(ZIP, Param), ":", "timestamp"])
 	end,
     {lists:concat([Timestamp_param, ":", "mega"]),
@@ -133,9 +130,9 @@ get_actual_count(Connection, {Time_int, Count}, ZIP, Param, MAX) ->
     Times = get_last_n(Connection, ZIP, Param, MAX),
     Coeff = 
 	case Time_int of
-	    second -> 1;
 	    minute -> 60;
-	    hour -> 3600
+	    hour -> 3600;
+	    _ -> 1				% second
 	end,
     Min_time = Cur_time - Coeff * Count,
     Actual_times = lists:filter(fun(Time) -> Time > Min_time end, Times),
@@ -161,7 +158,7 @@ get_average_for_time(Connection, {Time_int, Count}, ZIP, Param) ->
 			       Data),
     Useful_length = length(Useful_data),
     case Useful_length of
-	0 -> -1;
+	0 -> undefined;
 	_ -> sum(Useful_data) / Useful_length
     end.
 	    
@@ -215,6 +212,6 @@ swap_upd_zips(Connection) ->
 check_need_upd(Connection, ZIP) ->
     {ok, Bin_res} = eredis:q(Connection, ["SISMEMBER", get_update_key(main), ZIP]),
     case bin_to_num(Bin_res) of
-	1 -> ready;
-	0 -> updating
+	0 -> updating;
+	_ -> ready;
     end.

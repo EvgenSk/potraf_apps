@@ -35,7 +35,10 @@ get_potraf_req(<<"POST">>, Req) ->
     case cowboy_req:has_body(Req) of
 	{true, _Req2} -> {add, add_req(Req)};
 	{false, _Req2} -> ok
-    end.
+    end;
+
+get_potraf_req(_Method, _Req) ->
+    not_implemented.
     
 %% for GET HTTP-requests
 
@@ -54,23 +57,23 @@ fetch_zip(Req) ->
     {ZIP_bin, _Req2} = cowboy_req:qs_val(<<"zip">>, Req),
     list_to_integer(binary_to_list(ZIP_bin)).
 
-send_potraf_req(ok)->
-    ok;
-
-send_potraf_req(undefined)->
-    undefined;
-
 send_potraf_req({get, ZIP})->
     potraf:request(get, ZIP);
 
 send_potraf_req({add, Params})->
-    potraf:request(add, Params).
+    potraf:request(add, Params);
+
+send_potraf_req(Anything_else)->
+    Anything_else.
 
 send_response(_Repl_type, undefined, Req) ->
     cowboy_req:reply(400, [], <<"Missing request parameters.">>, Req);
 
 send_response(_Repl_type, ok, Req) ->
     cowboy_req:reply(200, [{<<"content-encoding">>, <<"utf-8">>}], "ok", Req);
+
+send_response(_Repl_type, not_implemented, Req) ->
+    cowboy_req:reply(501, [], <<"Only GET and POST methods are implemented.">>, Req);
 
 send_response(Reply_type, Reply, Req) ->
     Wrapped_repl = wrap_potraf_repl(Reply_type, Reply),

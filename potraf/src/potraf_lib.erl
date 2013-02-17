@@ -1,6 +1,5 @@
 -module(potraf_lib).
 
--export([to_string/1]).
 -export([get/3]).
 -export([add/4]).
 -export([get_last_n/4]).
@@ -100,34 +99,38 @@ get_by_string(Connection, Q_string) ->
 
 add(Connection, ZIP, Param, Value)->
     Q_string = get_q_string(ZIP, Param),
-    {ok, Val} = eredis:q(Connection, ["LPUSH", Q_string, Value]),
+    {ok, Val} = eredis:q(Connection, ["LPUSH", Q_string, to_list(Value)]),
     Val.
 
 add_by_string(Connection, Q_string, Value) ->
-    {ok, Val} = eredis:q(Connection, ["LPUSH", Q_string, Value]),
+    {ok, Val} = eredis:q(Connection, ["LPUSH", Q_string, to_list(Value)]),
     Val.
     
 set_by_string(Connection, Q_string, Value) ->
-    {ok, Val} = eredis:q(Connection, ["SET", Q_string, Value]),
+    {ok, Val} = eredis:q(Connection, ["SET", Q_string, to_list(Value)]),
     Val.
  
 set(Connection, ZIP, Param, Value) ->
     Q_string = get_q_string(ZIP, Param),
-    {ok, Val} = eredis:q(Connection, ["SET", Q_string, Value]),
+    {ok, Val} = eredis:q(Connection, ["SET", Q_string, to_list(Value)]),
     Val.
 
-get_last_n(Connection, ZIP, Param, N) ->
-    {Mega, _} = get_timestamp_q_strings(ZIP, Param),
-    {ok, Val} = eredis:q(Connection, ["LRANGE", Mega, 0, N - 1]),
-    case Val of
-	undefined -> undefined;
-	_ -> bin_to_num(Val)
+get_last_n_times(Connection, ZIP, Param, N) ->
+    {Mega, Second} = get_timestamp_q_strings(ZIP, Param),
+    {ok, MegaVals} = eredis:q(Connection, ["LRANGE", Mega, 0, N - 1]),
+    {ok, SecondVals} = eredis:q(Connection, ["LRANGE", Second, 0, N - 1]),
+    case MegaVals of
+	[] -> [];
+	_ -> 
+	    map(fun(TimestampList)-> list_to_integer(TimestampList) end,
+		map(fun({MBin, SBin})-> utils:timestamp_to_list({MBin, SBin}) end,
+		    lists:zip(MegaVals, SecondVals)))
     end.
 
 get_actual_count(Connection, {Time_int, Count}, ZIP, Param, MAX) -> 
     {Mega, Seconds, _} = now(),				   % may be use micro?
     Cur_time = Mega * 1000000 + Seconds,
-    Times = get_last_n(Connection, ZIP, Param, MAX),
+    Times = get_last_n_times(Connection, ZIP, Param, MAX),
     Coeff = 
 	case Time_int of
 	    minute -> 60;
@@ -152,8 +155,7 @@ unuseful_elem() ->
 
 get_average_for_time(Connection, {Time_int, Count}, ZIP, Param) ->
     N = get_actual_count(Connection, {Time_int, Count}, ZIP, Param, max_useful()),
-    Data = map(fun(Elem) -> bin_to_num(Elem) end, 
-	       get_last_n(Connection, ZIP, Param, N)),
+    Data = get_last_n(Connection, ZIP, Param, N),
     Useful_data = lists:filter(fun(Elem) -> Elem /= unuseful_elem() end, 
 			       Data),
     Useful_length = length(Useful_data),
@@ -162,12 +164,20 @@ get_average_for_time(Connection, {Time_int, Count}, ZIP, Param) ->
 	_ -> sum(Useful_data) / Useful_length
     end.
 	    
+get_last_n(Connection, ZIP, Param, N) ->
+    Q_string = get_q_string(ZIP, Param),
+    {ok, Vals} = eredis:q(Connection, ["LRANGE", Q_string, 0, N - 1]),
+    case Vals of
+	[] -> [];
+	_ -> map(fun(Val)-> list_to_integer(to_list(Val)) end, Vals)
+    end.
+
 add_actual_suff(Param) ->
     lists:concat([Param, ":", "actual"]).
 
 get_last_timestamp(Connection, ZIP, Param) ->
     {Mega, Seconds} = get_timestamp_q_strings(ZIP, Param),
-    {(get_by_string(Connection, add_actual_suff(Mega))),
+    {get_by_string(Connection, add_actual_suff(Mega)),
      get_by_string(Connection, add_actual_suff(Seconds))}.
 
 set_last_timestamp(Connection, ZIP, Param, Timestamp) ->
@@ -213,5 +223,5 @@ check_need_upd(Connection, ZIP) ->
     {ok, Bin_res} = eredis:q(Connection, ["SISMEMBER", get_update_key(main), ZIP]),
     case bin_to_num(Bin_res) of
 	0 -> updating;
-	_ -> ready;
+	_ -> ready
     end.

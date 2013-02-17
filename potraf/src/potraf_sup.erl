@@ -17,9 +17,10 @@ start_link(SupName) ->
     supervisor:start_link(SupName, ?MODULE, []).
 
 init([]) ->
+    {ok, Upd_time_interval} = application:get_env(upd_time_interval),
     Shutdown_time = 1000,
     Informer = {?INFORMER,
-		{?INFORMER, start_link, [application:get_env(upd_time_interval), dont_update]},
+		{?INFORMER, start_link, [Upd_time_interval, dont_update]},
 		permanent,
 		Shutdown_time,
 		worker,

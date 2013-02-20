@@ -3,7 +3,7 @@
 
 -export([init/3]).
 -export([handle/2]).
--export([terminate/2]).
+-export([terminate/3]).
 
 -import(lists, [map/2, zip/2]).
 
@@ -21,7 +21,7 @@ handle(Req, Repl_type) ->
     {ok, Req4} = send_response(Repl_type, Potraf_repl, Req2),
     {ok, Req4, Repl_type}.
 
-terminate(_Req, _State) ->
+terminate(_Reason, _Req, _State) ->
     ok.
 
 %% 
@@ -33,8 +33,8 @@ get_potraf_req(<<"GET">>, Req) ->
 
 get_potraf_req(<<"POST">>, Req) ->
     case cowboy_req:has_body(Req) of
-	{true, _Req2} -> {add, add_req(Req)};
-	{false, _Req2} -> ok
+	true -> {add, add_req(Req)};
+	false -> ok
     end;
 
 get_potraf_req(_Method, _Req) ->

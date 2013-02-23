@@ -17,8 +17,10 @@ init(_Transport, Req, [Repl_type]) ->
 handle(Req, Repl_type) ->
     {Method, Req2} = cowboy_req:method(Req),
     Potraf_req = get_potraf_req(Method, Req2),
+    Req3 = compact_req(Req2),
     Potraf_repl = send_potraf_req(Potraf_req),
-    {ok, Req4} = send_response(Repl_type, Potraf_repl, Req2),
+    {ok, Req4} = send_response(Repl_type, Potraf_repl, Req3),
+    close_connection(Req),
     {ok, Req4, Repl_type}.
 
 terminate(_Reason, _Req, _State) ->
@@ -93,3 +95,13 @@ qs_val_to_int(QSVal) ->
 	undefined -> undefined; 
 	_ -> list_to_integer(binary_to_list(QSVal)) 
     end.
+
+close_connection(Req) ->
+    cowboy_req:reply(200,
+    		     [{<<"connection">>, <<"close">>}],
+    		     <<"">>,
+    		     Req),
+    Req.
+
+compact_req(Req) ->
+    cowboy_req:compact(Req).

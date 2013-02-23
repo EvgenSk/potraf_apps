@@ -26,6 +26,8 @@
 -export([set_result_timestamp/3]).
 -export([get_timestamps/2]).
 -export([get_traffic_info/2]).
+-export([close_connection/1]).
+-export([(run_with_connection/2)]).
 
 -include_lib("definitions.hrl").
 
@@ -35,6 +37,26 @@
 %% 
 %% Internal functions
 %% 
+
+get_connection(result) ->
+    get_connection(0);
+
+get_connection(raw_data) ->
+    get_connection(1);
+
+get_connection(Num) ->
+    {ok, C} = eredis:start_link([{database, Num}, 
+				 {reconnect_sleep, no_reconnect}]),
+    C.
+
+close_connection(Connection) ->
+    eredis:q(Connection, ["QUIT"]).
+
+run_with_connection(Fun, Connection_name) ->
+    Connection = get_connection(Connection_name),
+    Result = Fun(Connection),
+    close_connection(Connection),
+    Result.
 
 get_q_string(ZIP, Param) ->
     case Param of
@@ -75,18 +97,6 @@ set_result_timestamp(Connection, ZIP, Timestamp) ->
     set_by_string(Connection, Mega_str, Mega),
     set_by_string(Connection, Second_str, Second).
     
-
-get_connection(result) ->
-    get_connection(0);
-
-get_connection(raw_data) ->
-    get_connection(1);
-
-get_connection(Num) ->
-    {ok, C} = eredis:start_link(),
-    eredis:q(C, ["SELECT", Num]),
-    C.
-
 get(Connection, ZIP, Param) ->
     Q_string = get_q_string(ZIP, Param),
     {ok, Val} = eredis:q(Connection, ["GET", Q_string]),
@@ -165,11 +175,15 @@ get_average_for_time(Connection, {Time_int, Count}, ZIP, Param) ->
     end.
 	    
 get_last_n(Connection, ZIP, Param, N) ->
-    Q_string = get_q_string(ZIP, Param),
-    {ok, Vals} = eredis:q(Connection, ["LRANGE", Q_string, 0, N - 1]),
-    case Vals of
-	[] -> [];
-	_ -> map(fun(Val)-> list_to_integer(to_list(Val)) end, Vals)
+    case N of 
+	0 -> [];
+	_ -> 
+	    Q_string = get_q_string(ZIP, Param),
+	    {ok, Vals} = eredis:q(Connection, ["LRANGE", Q_string, 0, N - 1]),
+	    case Vals of
+		[] -> [];
+		_ -> map(fun(Val)-> utils:to_int_or_atom(Val) end, Vals)
+	    end
     end.
 
 add_actual_suff(Param) ->

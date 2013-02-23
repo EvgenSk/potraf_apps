@@ -27,12 +27,11 @@ init(_Args) ->
 handle_call(#potraf_req{request = get, param = ZIP}, From, State) ->
     case get_data_status(ZIP) of
 	ready -> 
-	    Traffic = get_traffic_info(ZIP),
-	    Timestamps = get_timestamps(ZIP),
+	    {Traffic, Timestamps} = get_traffic_and_timestamps(ZIP),
 	    {stop, normal, {Traffic, Timestamps}, State}; % TODO: may be we need record for reply {Traffic, Timestamps}
 	_ -> 
 	    gen_event:add_handler(?UPD_EVENT_MGR, update_event_handler, [From, ZIP]),
-	    {noreply, State, 500}
+	    {noreply, State}
     end.
 
 %% handle_cast
@@ -62,12 +61,6 @@ terminate(normal, _State) ->
 %% Internal functions
 %% 
 
-get_traffic_info(ZIP) ->
-    potraf_lib:get_traffic_info(potraf_lib:get_connection(?RESULT), ZIP).
-
-get_timestamps(ZIP) ->
-    potraf_lib:get_timestamps(potraf_lib:get_connection(?RESULT), ZIP).
-
 get_data_status(ZIP) ->
     case informer:get_updating_status() of
 	#data_status{status = up_to_date} -> ready;
@@ -75,4 +68,13 @@ get_data_status(ZIP) ->
     end.
 
 check_need_update(ZIP) ->
-    potraf_lib:check_need_upd(potraf_lib:get_connection(?RESULT), ZIP).
+    potraf_lib:run_with_connection(fun(Connection)-> 
+					   potraf_lib:check_need_upd(Connection, ZIP) end, 
+				   ?RESULT).
+
+get_traffic_and_timestamps(ZIP) ->
+    potraf_lib:run_with_connection(fun(Connection)->
+					   Traf_info = potraf_lib:get_traffic_info(Connection, ZIP),
+					   Timestamps = potraf_lib:get_timestamps(Connection, ZIP),
+					   {Traf_info, Timestamps} end,
+				   ?RESULT).

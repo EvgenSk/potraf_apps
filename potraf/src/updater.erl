@@ -68,7 +68,9 @@ update_data() ->
     Raw_connection = potraf_lib:get_connection(?RAW_DATA),
     update_each_zip(Res_connection, Raw_connection),
     potraf_lib:swap_upd_zips(Res_connection),
-    gen_server:cast(?INFORMER, #data_req{request = updating_finished}).
+    gen_server:cast(?INFORMER, #data_req{request = updating_finished}),
+    potraf_lib:close_connection(Res_connection),
+    potraf_lib:close_connection(Raw_connection).
 
 update_each_zip(Res_connection, Raw_connection) ->
     ZIP_bin = potraf_lib:get_zip_for_upd(Res_connection),

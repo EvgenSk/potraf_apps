@@ -56,21 +56,28 @@ terminate(normal, _State) ->
 %% 
 
 add_traffic_info(ZIP, Traf_info) ->
-    add_traffic_info(potraf_lib:get_connection(?RAW_DATA), ZIP, Traf_info).
+    potraf_lib:run_with_connection(fun(Connection)-> 
+					   add_traffic_info(Connection, ZIP, Traf_info) end, 
+				   ?RAW_DATA).
 
 add_traffic_info(Connection, ZIP, Traf_info) ->
     foreach(fun({Id, Val}) -> potraf_lib:add(Connection, ZIP, Id, Val) end,
 	    Traf_info).
 
 add_timestamps_info(ZIP, Fields, Timestamp) ->
-    add_timestamps_info(potraf_lib:get_connection(?RAW_DATA), ZIP, Fields, Timestamp).
+    potraf_lib:run_with_connection(fun(Connection)-> 
+					   add_timestamps_info(Connection, ZIP, Fields, Timestamp) end, 
+				   ?RAW_DATA).
 
 add_timestamps_info(Connection, ZIP, Fields, Timestamp) ->
     foreach(fun(Field) -> potraf_lib:add_params_timestamp(Connection, ZIP, Field, Timestamp) end, 
 	    Fields).
 
 set_last_timestamps(ZIP, Fields, Timestamp) ->
-    set_last_timestamps(potraf_lib:get_connection(?RAW_DATA), ZIP, Fields, Timestamp).
+    potraf_lib:run_with_connection(fun(Connection)-> 
+					   set_last_timestamps(Connection, ZIP, Fields, Timestamp) end, 
+				   ?RAW_DATA).
+
 
 set_last_timestamps(Connection, ZIP, Fields, Timestamp) -> 
     foreach(fun(Field) -> potraf_lib:set_last_timestamp(Connection, ZIP, Field, Timestamp) end,
@@ -82,7 +89,9 @@ mark_for_upd(ZIP) ->
 	    #data_status{status = updating} -> tmp;
 	    _ -> main
 	end,
-    potraf_lib:mark_for_upd(potraf_lib:get_connection(?RESULT), Updating_key, ZIP).
+    potraf_lib:run_with_connection(fun(Connection)-> 
+					   potraf_lib:mark_for_upd(Connection, Updating_key, ZIP) end,
+				   ?RESULT).
 
 add_traffic_and_timestamps_info(ZIP, Traf_info, Timestamp) ->
     Useful_elems = get_useful_elems(Traf_info),

@@ -158,15 +158,12 @@ is_useful(undefined) ->
     false;
 
 is_useful(Data) ->
-    Data /= unuseful_elem().
-
-unuseful_elem() ->
-    -1.
+    Data >= 0.
 
 get_average_for_time(Connection, {Time_int, Count}, ZIP, Param) ->
     N = get_actual_count(Connection, {Time_int, Count}, ZIP, Param, max_useful()),
     Data = get_last_n(Connection, ZIP, Param, N),
-    Useful_data = lists:filter(fun(Elem) -> Elem /= unuseful_elem() end, 
+    Useful_data = lists:filter(fun(Elem) -> is_useful(Elem) end, 
 			       Data),
     Useful_length = length(Useful_data),
     case Useful_length of

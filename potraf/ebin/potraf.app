@@ -20,7 +20,8 @@
 		potraf_adders_sup, 
 		potraf_getters_sup, 
 		update_event_manager]},
-  {env, [{upd_time_interval, 300000}]},
+  {env, [{upd_time_interval, 300000},
+	 {adder_life_time, 600000}]},
   {applications, [
 		  kernel,
 		  stdlib,

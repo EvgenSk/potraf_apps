@@ -9,6 +9,7 @@
 
 -import(lists, [foreach/2, filter/2]).
 
+-define(TIMEOUT, 600000).
 %% 
 %% API
 %% 
@@ -20,26 +21,32 @@ start_link(ServerName) ->
     gen_server:start_link(ServerName, ?MODULE, [], []).
 
 init(_Args) ->
-    {ok, ready}.
+    case application:get_env(adder_life_time) of
+	{ok, Life_time} -> {ok, Life_time, Life_time};
+	_ -> {ok, ?TIMEOUT, ?TIMEOUT}
+    end.
 
 %% handle_call
 
-handle_call(_Req, _Msg, State) ->
-    {reply, ok, State}.
+handle_call(_Req, _Msg, Life_time) ->
+    {reply, ok, Life_time, Life_time}.
 
 %% handle_cast
 
-handle_cast(#potraf_req{request = add, param = {ZIP, Traf_info, Timestamp}}, State) ->
+handle_cast(#potraf_req{request = add, param = {ZIP, Traf_info, Timestamp}}, Life_time) ->
     add_traffic_and_timestamps_info(ZIP, Traf_info, Timestamp),
-    {noreply, State};
+    {noreply, Life_time, Life_time};
 
-handle_cast(_Msg, State) ->
-    {noreply, State}.
+handle_cast(_Msg, Life_time) ->
+    {noreply, Life_time, Life_time}.
 
 %% handle_info
 
-handle_info(_Message, State) ->
-    {noreply, State}.
+handle_info(timeout, Life_time)->
+    {stop, normal, Life_time};
+
+handle_info(_Message, Life_time) ->
+    {noreply, Life_time, Life_time}.
 
 %% code_change
 

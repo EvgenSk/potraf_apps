@@ -233,6 +233,6 @@ swap_upd_zips(Connection) ->
 check_need_upd(Connection, ZIP) ->
     {ok, Bin_res} = eredis:q(Connection, ["SISMEMBER", get_update_key(main), ZIP]),
     case bin_to_num(Bin_res) of
-	0 -> updating;
-	_ -> ready
+	0 -> ready;
+	_ -> updating
     end.

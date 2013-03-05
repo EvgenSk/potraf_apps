@@ -28,6 +28,9 @@
 -export([get_traffic_info/2]).
 -export([close_connection/1]).
 -export([(run_with_connection/2)]).
+-export([max_useful/0]).
+-export([trim/4]).
+-export([trim/3]).
 
 -include_lib("definitions.hrl").
 
@@ -152,7 +155,10 @@ get_actual_count(Connection, {Time_int, Count}, ZIP, Param, MAX) ->
     length(Actual_times).
 
 max_useful() ->
-    100.
+    case application:get_env(max_useful) of
+	{ok, Max_useful} -> Max_useful;
+	_ -> 50
+    end.
 
 is_useful(undefined) ->
     false;
@@ -236,3 +242,13 @@ check_need_upd(Connection, ZIP) ->
 	0 -> ready;
 	_ -> updating
     end.
+
+trim(Connection, ZIP, Param, Trim_to) ->
+    Q_string = get_q_string(ZIP, Param),
+    eredis:q(Connection, ["LTRIM", Q_string, 0, Trim_to - 1]),
+    {Q_mega, Q_second} = get_timestamp_q_strings(ZIP, Param),
+    eredis:q(Connection, ["LTRIM", Q_mega, 0, Trim_to - 1]),
+    eredis:q(Connection, ["LTRIM", Q_second, 0, Trim_to - 1]).
+    
+trim(Connection, ZIP, Param) ->
+    trim(Connection, ZIP, Param, max_useful()).

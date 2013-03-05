@@ -107,9 +107,17 @@ add_traffic_and_timestamps_info(ZIP, Traf_info, Timestamp) ->
 	    add_traffic_info(ZIP, Useful_elems),
 	    Useful_fields = lists:map(fun({Id, _Val})-> Id end, Useful_elems),
 	    add_timestamps_info(ZIP, Useful_fields, Timestamp),
-	    set_last_timestamps(ZIP, Useful_fields, Timestamp)
+	    set_last_timestamps(ZIP, Useful_fields, Timestamp),
+	    trim_data(ZIP, Useful_fields)
     end.
 
 get_useful_elems(Traf_info) ->
     filter(fun({_, Val})-> potraf_lib:is_useful(Val) end, 
 	   ?record_to_tuplelist(traffic, Traf_info)).
+
+trim_data(ZIP, Fields) ->
+    potraf_lib:run_with_connection(fun(Connection)-> 
+					   foreach(fun(Field)-> 
+							   potraf_lib:trim(Connection, ZIP, Field) end,
+						   Fields) end,
+				   ?RAW_DATA).

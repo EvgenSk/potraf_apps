@@ -108,7 +108,8 @@ add_traffic_and_timestamps_info(ZIP, Traf_info, Timestamp) ->
 	    Useful_fields = lists:map(fun({Id, _Val})-> Id end, Useful_elems),
 	    add_timestamps_info(ZIP, Useful_fields, Timestamp),
 	    set_last_timestamps(ZIP, Useful_fields, Timestamp),
-	    trim_data(ZIP, Useful_fields)
+	    trim_data(ZIP, Useful_fields),
+	    set_expiration(ZIP, Useful_fields)
     end.
 
 get_useful_elems(Traf_info) ->
@@ -120,4 +121,11 @@ trim_data(ZIP, Fields) ->
 					   foreach(fun(Field)-> 
 							   potraf_lib:trim(Connection, ZIP, Field) end,
 						   Fields) end,
+				   ?RAW_DATA).
+set_expiration(ZIP, Fields) ->
+    potraf_lib:run_with_connection(fun(Connection)-> 
+					   Expiration_time = 2 * potraf_lib:upd_time_interval(),
+					   foreach(fun(Field)-> 
+							   potraf_lib:set_expiration_time(Connection, ZIP, Field, Expiration_time) end,
+						   Fields)end,
 				   ?RAW_DATA).

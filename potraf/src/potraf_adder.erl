@@ -8,6 +8,11 @@
 -include_lib("definitions.hrl").
 
 -import(lists, [foreach/2, filter/2]).
+-import(potraf_lib, [run_with_connection/2, 
+		     set_expiration_time/4, 
+		     trim/3, 
+		     mark_for_upd/3,
+		     upd_time_interval/0]).
 
 -define(TIMEOUT, 600000).
 %% 
@@ -63,27 +68,27 @@ terminate(normal, _State) ->
 %% 
 
 add_traffic_info(ZIP, Traf_info) ->
-    potraf_lib:run_with_connection(fun(Connection)-> 
-					   add_traffic_info(Connection, ZIP, Traf_info) end, 
-				   ?RAW_DATA).
+    run_with_connection(fun(Connection)-> 
+				add_traffic_info(Connection, ZIP, Traf_info) end, 
+			?RAW_DATA).
 
 add_traffic_info(Connection, ZIP, Traf_info) ->
     foreach(fun({Id, Val}) -> potraf_lib:add(Connection, ZIP, Id, Val) end,
 	    Traf_info).
 
 add_timestamps_info(ZIP, Fields, Timestamp) ->
-    potraf_lib:run_with_connection(fun(Connection)-> 
-					   add_timestamps_info(Connection, ZIP, Fields, Timestamp) end, 
-				   ?RAW_DATA).
+    run_with_connection(fun(Connection)-> 
+				add_timestamps_info(Connection, ZIP, Fields, Timestamp) end, 
+			?RAW_DATA).
 
 add_timestamps_info(Connection, ZIP, Fields, Timestamp) ->
     foreach(fun(Field) -> potraf_lib:add_params_timestamp(Connection, ZIP, Field, Timestamp) end, 
 	    Fields).
 
 set_last_timestamps(ZIP, Fields, Timestamp) ->
-    potraf_lib:run_with_connection(fun(Connection)-> 
-					   set_last_timestamps(Connection, ZIP, Fields, Timestamp) end, 
-				   ?RAW_DATA).
+    run_with_connection(fun(Connection)-> 
+				set_last_timestamps(Connection, ZIP, Fields, Timestamp) end, 
+			?RAW_DATA).
 
 
 set_last_timestamps(Connection, ZIP, Fields, Timestamp) -> 
@@ -96,9 +101,9 @@ mark_for_upd(ZIP) ->
 	    #data_status{status = updating} -> tmp;
 	    _ -> main
 	end,
-    potraf_lib:run_with_connection(fun(Connection)-> 
-					   potraf_lib:mark_for_upd(Connection, Updating_key, ZIP) end,
-				   ?RESULT).
+    run_with_connection(fun(Connection)-> 
+				mark_for_upd(Connection, Updating_key, ZIP) end,
+			?RESULT).
 
 add_traffic_and_timestamps_info(ZIP, Traf_info, Timestamp) ->
     Useful_elems = get_useful_elems(Traf_info),
@@ -117,15 +122,15 @@ get_useful_elems(Traf_info) ->
 	   ?record_to_tuplelist(traffic, Traf_info)).
 
 trim_data(ZIP, Fields) ->
-    potraf_lib:run_with_connection(fun(Connection)-> 
-					   foreach(fun(Field)-> 
-							   potraf_lib:trim(Connection, ZIP, Field) end,
-						   Fields) end,
-				   ?RAW_DATA).
+    run_with_connection(fun(Connection)-> 
+				foreach(fun(Field)-> 
+						trim(Connection, ZIP, Field) end,
+					Fields) end,
+			?RAW_DATA).
 set_expiration(ZIP, Fields) ->
-    potraf_lib:run_with_connection(fun(Connection)-> 
-					   Expiration_time = 2 * potraf_lib:upd_time_interval(),
-					   foreach(fun(Field)-> 
-							   potraf_lib:set_expiration_time(Connection, ZIP, Field, Expiration_time) end,
-						   Fields)end,
-				   ?RAW_DATA).
+    run_with_connection(fun(Connection)-> 
+				Expiration_time = 2 * upd_time_interval(),
+				foreach(fun(Field)-> 
+						set_expiration_time(Connection, ZIP, Field, Expiration_time) end,
+					Fields)end,
+			?RAW_DATA).

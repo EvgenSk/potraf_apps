@@ -21,7 +21,8 @@
 		potraf_getters_sup, 
 		update_event_manager]},
   {env, [{upd_time_interval, 300000},
-	 {adder_life_time, 600000}]},
+	 {adder_life_time, 600000},
+	 {max_useful, 50}]},
   {applications, [
 		  kernel,
 		  stdlib,

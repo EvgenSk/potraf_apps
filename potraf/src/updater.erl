@@ -66,24 +66,25 @@ terminate(normal, _State) ->
 update_data() ->
     Res_connection = potraf_lib:get_connection(?RESULT),
     Raw_connection = potraf_lib:get_connection(?RAW_DATA),
-    update_each_zip(Res_connection, Raw_connection),
+    Time_interval = potraf_lib:upd_time_interval(),
+    update_each_zip(Res_connection, Raw_connection, Time_interval),
     potraf_lib:swap_upd_zips(Res_connection),
     gen_server:cast(?INFORMER, #data_req{request = updating_finished}),
     potraf_lib:close_connection(Res_connection),
     potraf_lib:close_connection(Raw_connection).
 
-update_each_zip(Res_connection, Raw_connection) ->
+update_each_zip(Res_connection, Raw_connection, Time_interval) ->
     ZIP_bin = potraf_lib:get_zip_for_upd(Res_connection),
     case ZIP_bin of
 	undefined -> ok;
 	_ -> 
 	    ZIP = list_to_integer(binary:bin_to_list(ZIP_bin)),
-	    update_data_and_notify(Res_connection, Raw_connection, ZIP),
-	    update_each_zip(Res_connection, Raw_connection)
+	    update_data_and_notify(Res_connection, Raw_connection, ZIP, Time_interval),
+	    update_each_zip(Res_connection, Raw_connection, Time_interval)
     end.
 
-update_data_and_notify(Res_connection, Raw_connection, ZIP) ->
-    Avg_vals = get_average_vals(Raw_connection, ZIP, {minute, 5}),
+update_data_and_notify(Res_connection, Raw_connection, ZIP, Time_interval) ->
+    Avg_vals = get_average_vals(Raw_connection, ZIP, Time_interval),
     write_vals_to_db(Res_connection, ZIP, Avg_vals),
     Res_vals = potraf_lib:get_traffic_info(Res_connection, ZIP),
     Timestamps = get_last_timestamps(Raw_connection, ZIP),

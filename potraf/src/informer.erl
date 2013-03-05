@@ -19,7 +19,7 @@ start_link(ServerName, Time_interval, Update_now) ->
     gen_server:start_link(ServerName, ?MODULE, [Time_interval, Update_now], []).
 
 init([Time_interval, Update_now]) ->
-    timer:send_interval(Time_interval, #data_req{request = update}), % may be we must use apply_interval instead of send_interval
+    timer:send_interval(Time_interval * 1000, #data_req{request = update}), 
     case Update_now of
 	update -> 
 	    gen_server:cast(self(), #data_req{request = update}),

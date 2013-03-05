@@ -31,6 +31,8 @@
 -export([max_useful/0]).
 -export([trim/4]).
 -export([trim/3]).
+-export([upd_time_interval/0]).
+-export([set_expiration_time/4]).
 
 -include_lib("definitions.hrl").
 
@@ -140,17 +142,11 @@ get_last_n_times(Connection, ZIP, Param, N) ->
 		    lists:zip(MegaVals, SecondVals)))
     end.
 
-get_actual_count(Connection, {Time_int, Count}, ZIP, Param, MAX) -> 
+get_actual_count(Connection, Time_interval, ZIP, Param, MAX) -> 
     {Mega, Seconds, _} = now(),				   % may be use micro?
     Cur_time = Mega * 1000000 + Seconds,
     Times = get_last_n_times(Connection, ZIP, Param, MAX),
-    Coeff = 
-	case Time_int of
-	    minute -> 60;
-	    hour -> 3600;
-	    _ -> 1				% second
-	end,
-    Min_time = Cur_time - Coeff * Count,
+    Min_time = Cur_time - Time_interval,
     Actual_times = lists:filter(fun(Time) -> Time > Min_time end, Times),
     length(Actual_times).
 
@@ -166,8 +162,8 @@ is_useful(undefined) ->
 is_useful(Data) ->
     Data >= 0.
 
-get_average_for_time(Connection, {Time_int, Count}, ZIP, Param) ->
-    N = get_actual_count(Connection, {Time_int, Count}, ZIP, Param, max_useful()),
+get_average_for_time(Connection, Time_interval, ZIP, Param) ->
+    N = get_actual_count(Connection, Time_interval, ZIP, Param, max_useful()),
     Data = get_last_n(Connection, ZIP, Param, N),
     Useful_data = lists:filter(fun(Elem) -> is_useful(Elem) end, 
 			       Data),
@@ -252,3 +248,16 @@ trim(Connection, ZIP, Param, Trim_to) ->
     
 trim(Connection, ZIP, Param) ->
     trim(Connection, ZIP, Param, max_useful()).
+
+upd_time_interval()->
+    case application:get_env(upd_time_interval) of
+	{ok, Time_interval} -> Time_interval;
+	_ -> 300
+    end.
+
+set_expiration_time(Connection, ZIP, Param, Expire_time) ->
+    Q_string = get_q_string(ZIP, Param),
+    eredis:q(Connection, ["EXPIRE", Q_string, Expire_time]),
+    {Q_mega, Q_second} = get_timestamp_q_strings(ZIP, Param),
+    eredis:q(Connection, ["EXPIRE", Q_mega, Expire_time]),
+    eredis:q(Connection, ["EXPIRE", Q_second, Expire_time]).

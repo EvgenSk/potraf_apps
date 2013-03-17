@@ -2,7 +2,7 @@
 
 {application, potraf_http_gate,
  [{description, "HTTP gate for Post Office TRAFfic"},
-  {vsn, "1.0.0"},
+  {vsn, "0.1.0"},
   {modules, [potraf_http_handler, 
 	     potraf_http_gate, 
 	     potraf_http_gate_sup]},

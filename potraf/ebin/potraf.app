@@ -1,6 +1,6 @@
 {application, potraf,
  [{description, "POst Office TRAFfic application"},
-  {vsn, "1.0.0"},
+  {vsn, "0.1.0"},
   {modules, [potraf,
 	     potraf_app, 
 	     potraf_sup,

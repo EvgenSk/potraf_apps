@@ -3,13 +3,13 @@
 -behaviour(gen_server).
 
 -export([start_link/2, start_link/3]).
--export([init/1, handle_call/3, handle_cast/2, handle_info/2, code_change/3, terminate/2]).
 -export([get_updating_status/0]).
+-export([init/1, handle_call/3, handle_cast/2, handle_info/2, code_change/3, terminate/2]).
 
 -include_lib("definitions.hrl").
 
 %% 
-%% API (gen_server functions)
+%% API
 %% 
 
 start_link(Time_interval, Update_now) ->
@@ -17,6 +17,11 @@ start_link(Time_interval, Update_now) ->
 
 start_link(ServerName, Time_interval, Update_now) ->
     gen_server:start_link(ServerName, ?MODULE, [Time_interval, Update_now], []).
+
+get_updating_status() ->
+    gen_server:call(?INFORMER, #data_req{request = info, info_type = updating_status}).
+
+%% gen_server callbacks
 
 init([Time_interval, Update_now]) ->
     timer:send_interval(Time_interval * 1000, #data_req{request = update}), 
@@ -27,7 +32,6 @@ init([Time_interval, Update_now]) ->
 	_ -> 
 	    {ok, #data_status{status = up_to_date}}
     end.
-
 
 %% handle_cast
 
@@ -78,9 +82,3 @@ code_change(_OldVsn, State, _Extra) ->
 
 terminate(normal, _State) ->
     ok.
-
-%% Export functions
-
-get_updating_status() ->
-    gen_server:call(?INFORMER, #data_req{request = info, info_type = updating_status}).
-

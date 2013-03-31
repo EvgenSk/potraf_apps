@@ -63,6 +63,7 @@ terminate(normal, _State) ->
 %% Internal functions
 %% 
 
+%% updates RESULT_DATA using RAW_DATA
 update_data() ->
     Res_connection = potraf_lib:get_connection(?RESULT),
     Raw_connection = potraf_lib:get_connection(?RAW_DATA),
@@ -83,6 +84,7 @@ update_each_zip(Res_connection, Raw_connection, Time_interval) ->
 	    update_each_zip(Res_connection, Raw_connection, Time_interval)
     end.
 
+%% updates data for one ZIP and notifies on finish
 update_data_and_notify(Res_connection, Raw_connection, ZIP, Time_interval) ->
     Avg_vals = get_average_vals(Raw_connection, ZIP, Time_interval),
     write_vals_to_db(Res_connection, ZIP, Avg_vals),
@@ -93,7 +95,6 @@ update_data_and_notify(Res_connection, Raw_connection, ZIP, Time_interval) ->
     potraf_lib:unmark_for_upd(Res_connection, ZIP),
     gen_event:notify(?UPD_EVENT_MGR, {updated, ZIP, {Res_vals, Res_timestamps}}),
     ok.
-    
     
 get_average_vals(Connection, ZIP, Time_interval) ->
     map(fun(Param) -> 

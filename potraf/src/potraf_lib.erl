@@ -57,12 +57,14 @@ get_connection(Num) ->
 close_connection(Connection) ->
     eredis:q(Connection, ["QUIT"]).
 
+%% opens connection, runs Fun with it and closes connection
 run_with_connection(Fun, Connection_name) ->
     Connection = get_connection(Connection_name),
     Result = Fun(Connection),
     close_connection(Connection),
     Result.
 
+%% makes key-string for ZIP and Param 
 get_q_string(ZIP, Param) ->
     case Param of
 	people_count -> lists:concat([to_list(ZIP), ":", "people-count"]);
@@ -71,6 +73,7 @@ get_q_string(ZIP, Param) ->
 	package_windows_count -> lists:concat([to_list(ZIP), ":", "package-windows-count"])
     end.
 
+%% makes key-strings for timestamp for ZIP and Param
 get_timestamp_q_strings(ZIP, Param) ->
     Timestamp_param = 
 	case Param of
@@ -185,6 +188,7 @@ get_last_n(Connection, ZIP, Param, N) ->
 	    end
     end.
 
+%% adds suffix ':actual' to key-string
 add_actual_suff(Param) ->
     lists:concat([Param, ":", "actual"]).
 
@@ -227,6 +231,7 @@ mark_for_upd(Connection, Key, ZIP) ->
 unmark_for_upd(Connection, ZIP) ->
     eredis:q(Connection, ["SREM", get_update_key(main), ZIP]).
 
+%% moves ZIPs for update from tmp-key to main-key
 swap_upd_zips(Connection) ->
     eredis:q(Connection, ["SUNIONSTORE", get_update_key(main), get_update_key(tmp)]),
     eredis:q(Connection, ["DEL", get_update_key(tmp)]),
@@ -239,6 +244,7 @@ check_need_upd(Connection, ZIP) ->
 	_ -> updating
     end.
 
+%% trims all lists for ZIP:Param to 'Trim_to'
 trim(Connection, ZIP, Param, Trim_to) ->
     Q_string = get_q_string(ZIP, Param),
     eredis:q(Connection, ["LTRIM", Q_string, 0, Trim_to - 1]),
@@ -246,6 +252,7 @@ trim(Connection, ZIP, Param, Trim_to) ->
     eredis:q(Connection, ["LTRIM", Q_mega, 0, Trim_to - 1]),
     eredis:q(Connection, ["LTRIM", Q_second, 0, Trim_to - 1]).
     
+%% trims all lists for ZIP:Param to max_useful
 trim(Connection, ZIP, Param) ->
     trim(Connection, ZIP, Param, max_useful()).
 
@@ -255,6 +262,7 @@ upd_time_interval()->
 	_ -> 300
     end.
 
+%% sets expiration time to all keys for ZIP:Param
 set_expiration_time(Connection, ZIP, Param, Expire_time) ->
     Q_string = get_q_string(ZIP, Param),
     eredis:q(Connection, ["EXPIRE", Q_string, Expire_time]),
